@@ -17,7 +17,7 @@ import {
 } from "../../service/Article/ArticleService";
 import { storage } from "../../service/firebaseConfig";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import moment from "moment";
+// import moment from "moment";
 import { getCategories } from "../../service/categories/CategoriesApi";
 
 const { TextArea } = Input;
@@ -42,7 +42,7 @@ function EditArticlesPage() {
           const data = response.data;
           setInitialValues({
             ...data,
-            publishedAt: moment(data.publishedAt),
+            // publishedAt: moment(data.publishedAt),
             hindiTitle: data.hindi.title,
             hindiDescription: data.hindi.description,
             kannadaTitle: data.kannada.title,

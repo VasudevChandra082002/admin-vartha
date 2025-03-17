@@ -20,7 +20,7 @@ export const deleteArticle = async (articleId) => {
   try {
     const response = await fetch(`${BASE_URL}/api/news/${articleId}`, {
       method: "DELETE",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json" },  
     });
 
     return await response.json();
@@ -32,7 +32,7 @@ export const deleteArticle = async (articleId) => {
 
 export const createArticle = async (articleData) => {
   try {
-    const response = await fetch(`${BASE_URL}/api/news/createNews`, {
+    const response = await fetch(`http:localhost:7000/api/news/createNews`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -77,5 +77,3 @@ export const updateArticle = async (articleId, articleData) => {
     throw error;
   }
 };
-
-
