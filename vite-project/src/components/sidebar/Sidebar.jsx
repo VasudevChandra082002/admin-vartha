@@ -77,11 +77,11 @@ const Sidebar = () => {
             Varthe janapada
           </Menu.Item>
         )}{" "}
-        {(role === "admin" || role === "content") && (
+        {/* {(role === "admin" || role === "content") && (
           <Menu.Item key="/manage-category" icon={<BookOutlined />}>
             Category
           </Menu.Item>
-        )}
+        )} */}
         {(role === "admin" || role === "content") && (
           <Menu.Item key="/manage-banners" icon={<BookOutlined />}>
             Banners
