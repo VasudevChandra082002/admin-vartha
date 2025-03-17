@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { ThemeProvider } from "styled-components";
 import { theme } from "./styles/theme/theme";
 import { GlobalStyles } from "./styles/global/GlobalStyles";
@@ -53,9 +58,12 @@ function App() {
       <GlobalStyles />
       <Router>
         <Routes>
+          {/* Redirect root path to /login */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
+
           {/* Login Route wrapped with PublicRoute */}
           <Route
-            path="login"
+            path="/login"
             element={
               <PublicRoute>
                 <LoginPage onLogin={handleLogin} />
@@ -63,8 +71,8 @@ function App() {
             }
           />
 
+          {/* Protected Routes wrapped with BaseLayout and PrivateRoute */}
           <Route path="/" element={<BaseLayout />}>
-            {/* Protected Routes wrapped with PrivateRoute */}
             <Route
               path="dashboard"
               element={
@@ -96,7 +104,7 @@ function App() {
                   <AddArticlePage />
                 </PrivateRoute>
               }
-            />{" "}
+            />
             <Route
               path="/manage-Notifications"
               element={
@@ -112,7 +120,7 @@ function App() {
                   <MagazinesPage />
                 </PrivateRoute>
               }
-            />{" "}
+            />
             <Route
               path="/manage-magazines2"
               element={
@@ -136,7 +144,7 @@ function App() {
                   <AddMagazinePage />
                 </PrivateRoute>
               }
-            />{" "}
+            />
             <Route
               path="/add-magazine2"
               element={
@@ -160,7 +168,7 @@ function App() {
                   <AddVideoPage />
                 </PrivateRoute>
               }
-            />{" "}
+            />
             <Route
               path="/manage-category"
               element={
@@ -184,7 +192,7 @@ function App() {
                   <AddLongVideos />
                 </PrivateRoute>
               }
-            />{" "}
+            />
             <Route
               path="/add-shortVideos"
               element={
