@@ -19,7 +19,7 @@ import { useNavigate } from "react-router-dom";
 import { storage } from "../../service/firebaseConfig"; // Import Firebase storage
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { getCategories } from "../../service/categories/CategoriesApi"; // Import Category service
-import moment from "moment";
+// import moment from "moment";
 
 const { TextArea } = Input;
 const { Option } = Select;
