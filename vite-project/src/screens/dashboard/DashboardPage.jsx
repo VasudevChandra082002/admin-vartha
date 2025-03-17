@@ -2,7 +2,7 @@ import React from "react";
 import { DashboardWrapper } from "./DashboardPage.styles";
 import StatsCard from "../../components/dashboard/statsCard/StatsCard";
 import DailyUserCard from "../../components/dailyUserCard/dailyUserCard";
-import KeyStats from "../../components/keyStats/keyStats";
+import KeyStats from "../../components/keyStats/KeyStats";
 
 function DashboardPage() {
   return (
