@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Card, DatePicker, message } from "antd";
 import { Bar } from "@ant-design/plots";
-import axios from "axios"; // For making API requests
 import moment from "moment"; // For handling date formatting
 
 function DailyUserCard() {
@@ -15,12 +14,19 @@ function DailyUserCard() {
       const year = selectedMonth.year();
       const month = selectedMonth.month() + 1; // months are zero-indexed, so we add 1
 
-      // Make API request to fetch data (replace with your actual API endpoint)
-      const response = await axios.get(
+      // Make API request to fetch data using fetch
+      const response = await fetch(
         `https://vartha-janapada.vercel.app/api/users/getMonthlyUser?year=${year}&month=${month}`
       );
-      if (response.data.success) {
-        setData(response.data.data); // Set the data from the API
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch data.");
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        setData(result.data); // Set the data from the API
       } else {
         message.error("No data found for this month.");
       }
