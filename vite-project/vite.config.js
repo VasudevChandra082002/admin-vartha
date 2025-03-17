@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   build: {
     rollupOptions: {
-      external: ["axios"], // Add 'jwt-decode' to the external modules
+      external: ["axios", "moment"], // Add 'jwt-decode' to the external modules
     },
   },
 });
