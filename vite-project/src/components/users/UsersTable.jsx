@@ -2,8 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Table, Avatar, Tag, Button, Space, Tooltip } from "antd";
 import { EditOutlined, DeleteOutlined, EyeOutlined } from "@ant-design/icons";
 import { getUsers } from "../../service/User/UserApi";
-import moment from "moment";
-
+const moment = window.moment;
 function UsersTable() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);

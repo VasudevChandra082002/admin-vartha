@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Card, DatePicker, message } from "antd";
 import { Bar } from "@ant-design/plots";
-import moment from "moment"; // For handling date formatting
-
+const moment = window.moment;
 function DailyUserCard() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
