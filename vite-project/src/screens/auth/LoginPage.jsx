@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Input, Button, Checkbox, Form, Typography, message } from "antd";
 import { EyeOutlined, EyeInvisibleOutlined } from "@ant-design/icons";
 import Logo from "../../assets/Logo.png"; // Adjust the path based on where your logo is stored
-import axios from "axios"; // Import axios for API calls
 import { useNavigate } from "react-router-dom"; // For navigation
 import { jwtDecode } from "jwt-decode"; // For decoding the JWT token
 import ArticlePage from "../articles/ArticlePage";
@@ -22,14 +21,25 @@ function LoginPage({ onLogin }) {
 
   const loginUser = async (username, password) => {
     try {
-      const response = await axios.post(`${BaseUrl}/api/auth/login-with-role`, {
-        email: username,
-        password: password, // Include password if necessary
+      const response = await fetch(`${BaseUrl}/api/auth/login-with-role`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: username,
+          password: password,
+        }),
       });
 
-      console.log("API response:", response.data); // Log the API response
+      if (!response.ok) {
+        throw new Error("Login failed. Please try again.");
+      }
 
-      return response.data; // Return the response data to the calling function
+      const data = await response.json();
+      console.log("API response:", data); // Log the API response
+
+      return data; // Return the response data to the calling function
     } catch (error) {
       message.error("Login failed. Please try again.");
       throw error; // Throw error to be caught in the calling function
@@ -70,7 +80,6 @@ function LoginPage({ onLogin }) {
           console.log("Current Role:", role); // Log the decoded token
 
           Cookies.set("role", role, { expires: 7 });
-          // Cookies.set("role", role, { expires: 7 });
 
           message.success("Login successful!");
 
