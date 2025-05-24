@@ -7,23 +7,23 @@ import {
   Upload,
   Card,
   Select,
-  DatePicker,
+  Spin,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import {
   updateMagazine,
   getMagazineBydid,
-} from "../../service/Magazine/MagazineService";
+} from "../../service/Magazine/MagazineService2";
 import { useNavigate, useParams } from "react-router-dom";
-import { storage } from "../../service/firebaseConfig"; // Import Firebase storage
+import { storage } from "../../service/firebaseConfig";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { getCategories } from "../../service/categories/CategoriesApi"; // Import Category service
+import { getCategories } from "../../service/categories/CategoriesApi";
 
 const { TextArea } = Input;
 const { Option } = Select;
 
-function UpdateMagazinePage() {
-  const { magazineId } = useParams(); // Get the magazine ID from the route params
+function UpdateMagazinePage2() {
+  const { magazineId } = useParams();
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -32,76 +32,78 @@ function UpdateMagazinePage() {
   const [imageUrl, setImageUrl] = useState("");
   const [pdfUrl, setPdfUrl] = useState("");
   const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [initialValues, setInitialValues] = useState({});
+  const [initialValues, setInitialValues] = useState(null);
+  const [fetching, setFetching] = useState(true);
 
   useEffect(() => {
-    fetchCategories();
-    fetchMagazineDetails();
-  }, [magazineId]);
+    const fetchData = async () => {
+      try {
+        const [categoriesResponse, magazineResponse] = await Promise.all([
+          getCategories(),
+          getMagazineBydid(magazineId),
+        ]);
 
-  const fetchCategories = async () => {
-    try {
-      const response = await getCategories();
-      if (response.success) {
-        setCategories(response.data);
-      } else {
-        message.error("Failed to load categories.");
-      }
-    } catch (error) {
-      message.error("Error fetching categories.");
-    }
-  };
+        if (categoriesResponse.success) {
+          setCategories(categoriesResponse.data);
+        } else {
+          message.error("Failed to load categories.");
+        }
 
-  const fetchMagazineDetails = async () => {
-    try {
-      const response = await getMagazineBydid(magazineId); // Use getMagazineBydid to fetch the magazine by its ID
-      if (response.success && response.data) {
-        const magazine = response.data;
-        setInitialValues({
-          title: magazine.title || "", // Making fields optional by default
-          description: magazine.description || "",
-          editionNumber: magazine.editionNumber || "",
-        });
-        setImageUrl(magazine.magazineThumbnail);
-        setPdfUrl(magazine.magazinePdf);
-        setSelectedCategory(magazine.category);
-      } else {
-        message.error("Magazine not found.");
+        if (magazineResponse.success && magazineResponse.data) {
+          const magazine = magazineResponse.data;
+          setInitialValues({
+            title: magazine.title || "",
+            description: magazine.description || "",
+            editionNumber: magazine.editionNumber || "",
+          });
+          setImageUrl(magazine.magazineThumbnail);
+          setPdfUrl(magazine.magazinePdf);
+          form.setFieldsValue({
+            title: magazine.title,
+            description: magazine.description,
+            editionNumber: magazine.editionNumber,
+          });
+        } else {
+          message.error("Magazine not found.");
+          navigate("/manage-magazines2");
+        }
+      } catch (error) {
+        message.error("Error loading data.");
+        console.error("Error:", error);
+        navigate("/manage-magazines2");
+      } finally {
+        setFetching(false);
       }
-    } catch (error) {
-      message.error("Error fetching magazine details.");
-      console.error("Error fetching magazine details:", error.message);
-    }
-  };
+    };
+
+    fetchData();
+  }, [magazineId, form, navigate]);
 
   const handleFormSubmit = async (values) => {
     setLoading(true);
     try {
       if (!imageUrl || !pdfUrl) {
-        message.error(
-          "Please upload both an image and a PDF before submitting."
-        );
+        message.error("Please upload both an image and a PDF before submitting.");
         setLoading(false);
         return;
       }
 
       const payload = {
         ...values,
-        magazineThumbnail: imageUrl, // Firebase Image URL
-        magazinePdf: pdfUrl, // Firebase PDF URL
-        editionNumber: values.editionNumber,
+        magazineThumbnail: imageUrl,
+        magazinePdf: pdfUrl,
       };
 
       const response = await updateMagazine(magazineId, payload);
       if (response.success) {
         message.success("Magazine updated successfully!");
-        navigate("/manage-magazine");
+        navigate("/manage-magazines2"); // Match your table component's route
       } else {
-        message.error("Failed to update magazine.");
+        message.error(response.message || "Failed to update magazine.");
       }
     } catch (error) {
       message.error("Error updating magazine.");
+      console.error("Update error:", error);
     } finally {
       setLoading(false);
     }
@@ -114,9 +116,7 @@ function UpdateMagazinePage() {
 
     uploadTask.on(
       "state_changed",
-      (snapshot) => {
-        // Optional: Progress tracking
-      },
+      null,
       (error) => {
         message.error("Image upload failed!");
         setImageUploading(false);
@@ -137,9 +137,7 @@ function UpdateMagazinePage() {
 
     uploadTask.on(
       "state_changed",
-      (snapshot) => {
-        // Optional: Progress tracking
-      },
+      null,
       (error) => {
         message.error("PDF upload failed!");
         setPdfUploading(false);
@@ -153,8 +151,12 @@ function UpdateMagazinePage() {
     );
   };
 
-  if (!initialValues.title) {
-    return <div>Loading...</div>; // Show a loading state until initialValues are set
+  if (fetching) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Spin size="large" />
+      </div>
+    );
   }
 
   return (
@@ -196,12 +198,12 @@ function UpdateMagazinePage() {
             form={form}
             layout="vertical"
             onFinish={handleFormSubmit}
-            initialValues={initialValues} // Use initialValues to pre-populate fields
+            initialValues={initialValues}
           >
             <Form.Item
               label="Title"
               name="title"
-              rules={[{ required: false, message: "Title is required" }]} // Make title optional
+              rules={[{ required: true, message: "Title is required" }]}
             >
               <Input placeholder="Enter magazine title" />
             </Form.Item>
@@ -209,7 +211,7 @@ function UpdateMagazinePage() {
             <Form.Item
               label="Description"
               name="description"
-              rules={[{ required: false, message: "Description is required" }]} // Make description optional
+              rules={[{ required: true, message: "Description is required" }]}
             >
               <TextArea rows={4} placeholder="Enter magazine description" />
             </Form.Item>
@@ -218,14 +220,18 @@ function UpdateMagazinePage() {
               label="Edition Number"
               name="editionNumber"
               rules={[
-                { required: false, message: "Edition number is required" },
-              ]} // Make editionNumber optional
+                { required: true, message: "Edition number is required" },
+              ]}
             >
               <Input placeholder="Enter edition number" />
             </Form.Item>
 
             {/* PDF Upload */}
-            <Form.Item label="Magazine PDF" name="magazinePdf">
+            <Form.Item
+              label="Magazine PDF"
+              name="magazinePdf"
+              rules={[{ required: true, message: "PDF is required" }]}
+            >
               <Upload
                 customRequest={handlePdfUpload}
                 showUploadList={false}
@@ -255,4 +261,4 @@ function UpdateMagazinePage() {
   );
 }
 
-export default UpdateMagazinePage;
+export default UpdateMagazinePage2;

@@ -86,7 +86,7 @@ function MagazineTable() {
   };
 
   const handleEdit = (id) => {
-    navigate(`/edit-magazine/${id}`);
+    navigate(`/edit-magazine2/${id}`);
   };
 
   const columns = [
