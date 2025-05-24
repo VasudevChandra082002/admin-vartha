@@ -8,7 +8,6 @@ import {
 import { ThemeProvider } from "styled-components";
 import { theme } from "./styles/theme/theme";
 import { GlobalStyles } from "./styles/global/GlobalStyles";
-
 import BaseLayout from "./components/layout/BaseLayout";
 import DashboardPage from "./screens/dashboard/DashboardPage";
 import ManageUsers from "./screens/manageusers/ManageUsers";
@@ -31,6 +30,7 @@ import Notifications from "./screens/notifications/Notifications.jsx";
 import CategoryPage from "./screens/category/categoryPage.jsx";
 import MagazinesPage2 from "./screens/magazines2/MagazinesPage2.jsx";
 import AddMagazinePage2 from "./screens/magazines2/AddMagazine2.jsx";
+import UpdateMagazinePage2 from "./screens/magazines/EditMagazine";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -214,6 +214,22 @@ function App() {
               element={
                 <PrivateRoute>
                   <EditArticlesPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/edit-magazine/:magazineId"
+              element={
+                <PrivateRoute>
+                  <UpdateMagazinePage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/edit-magazine2/:magazineId"
+              element={
+                <PrivateRoute>
+                  <UpdateMagazinePage2 />
                 </PrivateRoute>
               }
             />

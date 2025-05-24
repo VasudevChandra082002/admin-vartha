@@ -60,8 +60,8 @@ function AddMagazinePage() {
 
       const payload = {
         ...values,
-        magazineThumbnail: imageUrl, // Firebase Image URL
-        magazinePdf: pdfUrl, // Firebase PDF URL
+        magazineThumbnail: imageUrl, 
+        magazinePdf: pdfUrl, 
         editionNumber: values.editionNumber,
       };
 
