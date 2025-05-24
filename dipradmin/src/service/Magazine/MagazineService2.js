@@ -63,12 +63,13 @@ export const createMagazine = async (magazineData) => {
     throw error;
   }
 };
+
 export const updateMagazine = async (magazineId, magazineData) => {
   try {
     const response = await fetch(
       `${BASE_URL}/api/magazine2/update/${magazineId}`,
       {
-        method: "POST",
+        method: "PUT", 
         headers: {
           "Content-Type": "application/json",
         },
@@ -76,8 +77,9 @@ export const updateMagazine = async (magazineId, magazineData) => {
       }
     );
     return await response.json();
+    
   } catch (error) {
-    message.error("Error creating article.");
+    message.error("Error updating magazine.");
     throw error;
   }
 };
