@@ -8,7 +8,6 @@ import {
   Upload,
   Card,
   Select,
-  Spin,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import { useNavigate, useParams } from "react-router-dom";
@@ -18,7 +17,7 @@ import {
 } from "../../service/Article/ArticleService";
 import { storage } from "../../service/firebaseConfig";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import moment from "moment";
+// import moment from "moment";
 import { getCategories } from "../../service/categories/CategoriesApi";
 
 const { TextArea } = Input;
@@ -33,7 +32,6 @@ function EditArticlesPage() {
   const [imageUrl, setImageUrl] = useState("");
   const [initialValues, setInitialValues] = useState(null);
   const [categories, setCategories] = useState([]);
-  const [fetching, setFetching] = useState(true);
 
   // Fetch article data for editing
   useEffect(() => {
@@ -44,37 +42,25 @@ function EditArticlesPage() {
           const data = response.data;
           setInitialValues({
             ...data,
-            publishedAt: moment(data.publishedAt),
-            hindi: {
-              title: data.hindi?.title || "",
-              description: data.hindi?.description || "",
-            },
-            kannada: {
-              title: data.kannada?.title || "",
-              description: data.kannada?.description || "",
-            },
-            English: {
-              title: data.English?.title || "",
-              description: data.English?.description || "",
-            },
+            // publishedAt: moment(data.publishedAt),
+            hindiTitle: data.hindi.title,
+            hindiDescription: data.hindi.description,
+            kannadaTitle: data.kannada.title,
+            kannadaDescription: data.kannada.description,
+            englishTitle: data.English.title,
+            englishDescription: data.English.description,
           });
           setImageUrl(data.newsImage);
-          form.setFieldsValue({
-            ...data,
-            publishedAt: moment(data.publishedAt),
-          });
         } else {
           message.error("Failed to fetch article details.");
         }
       } catch (error) {
         message.error("Error fetching article details.");
-      } finally {
-        setFetching(false);
       }
     };
 
     fetchArticle();
-  }, [articleId, form]);
+  }, [articleId]);
 
   // Fetch categories for the dropdown
   useEffect(() => {
@@ -107,23 +93,13 @@ function EditArticlesPage() {
         ...values,
         publishedAt: values.publishedAt.toISOString(),
         newsImage: imageUrl,
-        hindi: {
-          title: values.hindi?.title || "",
-          description: values.hindi?.description || "",
-        },
-        kannada: {
-          title: values.kannada?.title || "",
-          description: values.kannada?.description || "",
-        },
-        English: {
-          title: values.English?.title || "",
-          description: values.English?.description || "",
-        },
       };
 
       const response = await updateArticle(articleId, payload);
       if (response.success) {
         message.success("Article updated successfully!");
+        form.resetFields();
+        setImageUrl("");
         navigate("/manage-Articles");
       } else {
         message.error("Failed to update article.");
@@ -158,12 +134,8 @@ function EditArticlesPage() {
     );
   };
 
-  if (fetching) {
-    return (
-      <div style={{ display: "flex", justifyContent: "center", padding: "50px" }}>
-        <Spin size="large" />
-      </div>
-    );
+  if (!initialValues) {
+    return <div>Loading...</div>;
   }
 
   return (
@@ -213,29 +185,19 @@ function EditArticlesPage() {
             <Input placeholder="Enter article title" />
           </Form.Item>
 
-          <Form.Item
-            label="Description"
-            name="description"
-            rules={[{ required: true, message: "Description is required" }]}
-          >
-            <TextArea rows={4} placeholder="Enter article description" />
-          </Form.Item>
-
           {/* Hindi Title and Description */}
           <Form.Item
             label="Hindi Title"
-            name={["hindi", "title"]}
-            rules={[{ required: true, message: "Hindi title is required" }]}
+            name="hindiTitle"
+            rules={[{ required: true, message: "Title is required" }]}
           >
             <Input placeholder="Enter Hindi article title" />
           </Form.Item>
 
           <Form.Item
             label="Hindi Description"
-            name={["hindi", "description"]}
-            rules={[
-              { required: true, message: "Hindi description is required" },
-            ]}
+            name="hindiDescription"
+            rules={[{ required: true, message: "Description is required" }]}
           >
             <TextArea rows={4} placeholder="Enter Hindi article description" />
           </Form.Item>
@@ -243,18 +205,16 @@ function EditArticlesPage() {
           {/* Kannada Title and Description */}
           <Form.Item
             label="Kannada Title"
-            name={["kannada", "title"]}
-            rules={[{ required: true, message: "Kannada title is required" }]}
+            name="kannadaTitle"
+            rules={[{ required: true, message: "Title is required" }]}
           >
             <Input placeholder="Enter Kannada article title" />
           </Form.Item>
 
           <Form.Item
             label="Kannada Description"
-            name={["kannada", "description"]}
-            rules={[
-              { required: true, message: "Kannada description is required" },
-            ]}
+            name="kannadaDescription"
+            rules={[{ required: true, message: "Description is required" }]}
           >
             <TextArea
               rows={4}
@@ -265,18 +225,16 @@ function EditArticlesPage() {
           {/* English Title and Description */}
           <Form.Item
             label="English Title"
-            name={["English", "title"]}
-            rules={[{ required: true, message: "English title is required" }]}
+            name="englishTitle"
+            rules={[{ required: true, message: "Title is required" }]}
           >
             <Input placeholder="Enter English article title" />
           </Form.Item>
 
           <Form.Item
             label="English Description"
-            name={["English", "description"]}
-            rules={[
-              { required: true, message: "English description is required" },
-            ]}
+            name="englishDescription"
+            rules={[{ required: true, message: "Description is required" }]}
           >
             <TextArea
               rows={4}
