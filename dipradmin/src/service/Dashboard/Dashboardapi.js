@@ -85,3 +85,39 @@ export const getTotalVideos = async () => {
     throw error;
   }
 };
+
+export const getUserProfile = async () => {
+  try {
+    const response = await fetch(`${BASE_URL}/api/auth/getUserProfile`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error loading data:", error);
+    throw error;
+  }
+};
+
+
+export const updateUserProfileById = async (userId, userData) => {
+  try {
+    const response = await fetch(`${BASE_URL}/api/users/update-profile/${userId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        // Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify(userData),
+    });
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error loading data:", error);
+    throw error;
+  }
+};

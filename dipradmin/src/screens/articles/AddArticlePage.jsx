@@ -14,6 +14,7 @@ import { UploadOutlined } from "@ant-design/icons";
 import {
   createArticle,
   updateArticle,
+  
 } from "../../service/Article/ArticleService";
 import { useNavigate } from "react-router-dom";
 import { storage } from "../../service/firebaseConfig"; // Import Firebase storage
@@ -67,7 +68,7 @@ function AddArticlePage() {
         newsImage: imageUrl, // Firebase Image URL
         category: selectedCategory, // Pass category _id
       };
-
+      console.log("Payload of adding article", payload);
       const response = await createArticle(payload);
       if (response.success) {
         message.success("Article added successfully!");
