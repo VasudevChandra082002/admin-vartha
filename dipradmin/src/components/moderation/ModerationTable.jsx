@@ -20,10 +20,11 @@ function ModerationTable() {
     const fetchComments = async () => {
       try {
         const response = await getAllComments();
+        console.log("API response:", response);
         if (response.success) {
           const transformedData = response.data.map((comment) => ({
             key: comment._id,
-            user: comment.user.displayName,
+            user: comment.user?.displayName,
             comment: comment.comment,
             createdTime: new Date(comment.createdTime).toLocaleString(),
             videoTitle: comment.video ? comment.video.title : "N/A",

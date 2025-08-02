@@ -11,15 +11,17 @@ import {
   Spin,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   getArticleById,
+  getHistoryById,
   updateArticle,
+  revertNewsByVersionNumber,
 } from "../../service/Article/ArticleService";
 import { storage } from "../../service/firebaseConfig";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-// import moment from "moment";
 import { getCategories } from "../../service/categories/CategoriesApi";
+import moment from "moment";
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -28,21 +30,28 @@ function EditArticlesPage() {
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const { articleId } = useParams();
+  const [searchParams] = useSearchParams();
+  const versionNumber = searchParams.get("version");
+
   const [loading, setLoading] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const [initialValues, setInitialValues] = useState(null);
   const [categories, setCategories] = useState([]);
   const [fetching, setFetching] = useState(true);
+  const [versionHistory, setVersionHistory] = useState([]);
+const [previousVersion, setPreviousVersion] = useState(null);
 
-  // Fetch article data for editing
+
+  // Fetch article data
   useEffect(() => {
     const fetchArticle = async () => {
       try {
         const response = await getArticleById(articleId);
+        console.log("edit article page article id", response);
         if (response.success) {
           const data = response.data;
-          setInitialValues({
+          const formattedValues = {
             ...data,
             publishedAt: moment(data.publishedAt),
             hindi: {
@@ -57,12 +66,11 @@ function EditArticlesPage() {
               title: data.English?.title || "",
               description: data.English?.description || "",
             },
-          });
+          };
+
+          setInitialValues(formattedValues);
           setImageUrl(data.newsImage);
-          form.setFieldsValue({
-            ...data,
-            publishedAt: moment(data.publishedAt),
-          });
+          form.setFieldsValue(formattedValues);
         } else {
           message.error("Failed to fetch article details.");
         }
@@ -76,7 +84,34 @@ function EditArticlesPage() {
     fetchArticle();
   }, [articleId, form]);
 
-  // Fetch categories for the dropdown
+  useEffect(() => {
+  const fetchVersionHistory = async () => {
+    try {
+      const response = await getHistoryById(articleId);
+      if (response.success && Array.isArray(response.data)) {
+        const sorted = response.data.sort((a, b) => b.versionNumber - a.versionNumber);
+        setVersionHistory(sorted);
+
+        if (versionNumber) {
+          const currentVer = parseInt(versionNumber);
+          const prev = sorted.find((v) => v.versionNumber === currentVer - 1);
+          if (prev) {
+            setPreviousVersion(prev.versionNumber);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching version history", err);
+    }
+  };
+
+  if (versionNumber) {
+    fetchVersionHistory();
+  }
+}, [versionNumber, articleId]);
+
+
+  // Fetch categories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -94,6 +129,7 @@ function EditArticlesPage() {
     fetchCategories();
   }, []);
 
+  // Submit form
   const handleFormSubmit = async (values) => {
     setLoading(true);
     try {
@@ -135,6 +171,7 @@ function EditArticlesPage() {
     }
   };
 
+  // Upload image
   const handleUpload = async ({ file }) => {
     setImageUploading(true);
     const storageRef = ref(storage, `newsImages/${file.name}`);
@@ -142,9 +179,7 @@ function EditArticlesPage() {
 
     uploadTask.on(
       "state_changed",
-      (snapshot) => {
-        // Optional: Progress tracking
-      },
+      null,
       (error) => {
         message.error("Image upload failed!");
         setImageUploading(false);
@@ -157,6 +192,31 @@ function EditArticlesPage() {
       }
     );
   };
+
+  // Handle revert
+const handleRevert = async () => {
+  const currentVer = parseInt(versionNumber);
+  if (!previousVersion || !currentVer) {
+    message.error("Invalid version to revert.");
+    return;
+  }
+
+  try {
+    console.log("Reverting to version:", previousVersion);
+    const res = await revertNewsByVersionNumber(articleId, currentVer);
+    if (res.success) {
+      message.success(`Successfully reverted to version ${previousVersion}.`);
+      navigate("/manage-Articles");
+    } else {
+      message.error(res.message || "Failed to revert version.");
+    }
+  } catch (err) {
+    console.error("Revert error:", err);
+    message.error("Unexpected error while reverting.");
+  }
+};
+
+
 
   if (fetching) {
     return (
@@ -176,7 +236,7 @@ function EditArticlesPage() {
         gap: "20px",
       }}
     >
-      {/* LEFT SIDE - Image Upload */}
+      {/* LEFT - Image Upload */}
       <Card title="Article Image" style={{ width: "40%" }}>
         <Upload
           customRequest={handleUpload}
@@ -187,7 +247,6 @@ function EditArticlesPage() {
             {imageUploading ? "Uploading..." : "Upload Image"}
           </Button>
         </Upload>
-
         {imageUrl && (
           <img
             src={imageUrl}
@@ -197,8 +256,18 @@ function EditArticlesPage() {
         )}
       </Card>
 
-      {/* RIGHT SIDE - General Information */}
+      {/* RIGHT - Form */}
       <Card title="General Information" style={{ width: "60%" }}>
+       {previousVersion && (
+  <Button
+    type="dashed"
+    danger
+    onClick={handleRevert}
+    style={{ marginBottom: 16 }}
+  >
+    Revert to Version {previousVersion}
+  </Button>
+)}
         <Form
           form={form}
           layout="vertical"
@@ -210,7 +279,7 @@ function EditArticlesPage() {
             name="title"
             rules={[{ required: true, message: "Title is required" }]}
           >
-            <Input placeholder="Enter article title" />
+            <Input />
           </Form.Item>
 
           <Form.Item
@@ -218,70 +287,55 @@ function EditArticlesPage() {
             name="description"
             rules={[{ required: true, message: "Description is required" }]}
           >
-            <TextArea rows={4} placeholder="Enter article description" />
+            <TextArea rows={4} />
           </Form.Item>
 
-          {/* Hindi Title and Description */}
+          {/* Hindi */}
           <Form.Item
             label="Hindi Title"
             name={["hindi", "title"]}
             rules={[{ required: true, message: "Hindi title is required" }]}
           >
-            <Input placeholder="Enter Hindi article title" />
+            <Input />
           </Form.Item>
-
           <Form.Item
             label="Hindi Description"
             name={["hindi", "description"]}
-            rules={[
-              { required: true, message: "Hindi description is required" },
-            ]}
+            rules={[{ required: true, message: "Hindi description is required" }]}
           >
-            <TextArea rows={4} placeholder="Enter Hindi article description" />
+            <TextArea rows={4} />
           </Form.Item>
 
-          {/* Kannada Title and Description */}
+          {/* Kannada */}
           <Form.Item
             label="Kannada Title"
             name={["kannada", "title"]}
             rules={[{ required: true, message: "Kannada title is required" }]}
           >
-            <Input placeholder="Enter Kannada article title" />
+            <Input />
           </Form.Item>
-
           <Form.Item
             label="Kannada Description"
             name={["kannada", "description"]}
-            rules={[
-              { required: true, message: "Kannada description is required" },
-            ]}
+            rules={[{ required: true, message: "Kannada description is required" }]}
           >
-            <TextArea
-              rows={4}
-              placeholder="Enter Kannada article description"
-            />
+            <TextArea rows={4} />
           </Form.Item>
 
-          {/* English Title and Description */}
+          {/* English */}
           <Form.Item
             label="English Title"
             name={["English", "title"]}
             rules={[{ required: true, message: "English title is required" }]}
           >
-            <Input placeholder="Enter English article title" />
+            <Input />
           </Form.Item>
-
           <Form.Item
             label="English Description"
             name={["English", "description"]}
-            rules={[
-              { required: true, message: "English description is required" },
-            ]}
+            rules={[{ required: true, message: "English description is required" }]}
           >
-            <TextArea
-              rows={4}
-              placeholder="Enter English article description"
-            />
+            <TextArea rows={4} />
           </Form.Item>
 
           <Form.Item
@@ -303,7 +357,7 @@ function EditArticlesPage() {
             name="author"
             rules={[{ required: true, message: "Author is required" }]}
           >
-            <Input placeholder="Enter author name" />
+            <Input />
           </Form.Item>
 
           <Form.Item

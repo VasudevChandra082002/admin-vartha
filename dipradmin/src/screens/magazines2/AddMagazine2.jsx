@@ -215,7 +215,8 @@ function AddMagazinePage2() {
             </Form.Item>
 
             <Button type="primary" htmlType="submit" block loading={loading}>
-              Add Magazine
+             
+ Add Magazine
             </Button>
           </Form>
         </Card>
@@ -223,5 +224,4 @@ function AddMagazinePage2() {
     </div>
   );
 }
-
 export default AddMagazinePage2;

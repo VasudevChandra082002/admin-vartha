@@ -58,6 +58,7 @@ function KeyStats() {
       {cardData.map((item, index) => (
         <Col key={index} span={6}>
           <Card
+          className="hover-card"
             bordered={false}
             style={{
               textAlign: "center",

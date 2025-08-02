@@ -67,7 +67,7 @@ function AddArticlePage() {
         newsImage: imageUrl, // Firebase Image URL
         category: selectedCategory, // Pass category _id
       };
-
+      console.log("Payload of adding article", payload);
       const response = await createArticle(payload);
       if (response.success) {
         message.success("Article added successfully!");

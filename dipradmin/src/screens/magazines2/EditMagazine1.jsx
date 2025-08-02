@@ -7,23 +7,29 @@ import {
   Upload,
   Card,
   Select,
-  DatePicker,
+  Space,
+  Spin,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
-  updateMagazine,
-  getMagazineBydid,
-} from "../../service/Magazine/MagazineService2";
-import { useNavigate, useParams } from "react-router-dom";
-import { storage } from "../../service/firebaseConfig"; // Import Firebase storage
+  updateMagazine1,
+  getMagazineBydid1,
+  revertMagazine1ByversionNumber,
+  getMagazineHistory1ById,
+} from "../../service/Magazine/MagazineService";
+import { storage } from "../../service/firebaseConfig";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { getCategories } from "../../service/categories/CategoriesApi"; // Import Category service
+import { getCategories } from "../../service/categories/CategoriesApi";
 
 const { TextArea } = Input;
 const { Option } = Select;
 
-function UpdateMagazinePage2() {
-  const { magazineId } = useParams(); // Get the magazine ID from the route params
+function UpdateMagazinePage1() {
+  const { magazineId } = useParams();
+  const [searchParams] = useSearchParams();
+  const versionNumber = searchParams.get("version");
+
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -34,6 +40,9 @@ function UpdateMagazinePage2() {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [initialValues, setInitialValues] = useState({});
+  const [fetching, setFetching] = useState(true);
+  const [versionHistory, setVersionHistory] = useState([]);
+  const [previousVersion, setPreviousVersion] = useState(null);
 
   useEffect(() => {
     fetchCategories();
@@ -55,48 +64,74 @@ function UpdateMagazinePage2() {
 
   const fetchMagazineDetails = async () => {
     try {
-      const response = await getMagazineBydid(magazineId); // Use getMagazineBydid to fetch the magazine by its ID
+      const response = await getMagazineBydid1(magazineId);
       if (response.success && response.data) {
         const magazine = response.data;
         setInitialValues({
-          title: magazine.title || "", // Making fields optional by default
+          title: magazine.title || "",
           description: magazine.description || "",
           editionNumber: magazine.editionNumber || "",
         });
         setImageUrl(magazine.magazineThumbnail);
         setPdfUrl(magazine.magazinePdf);
         setSelectedCategory(magazine.category);
+        form.setFieldsValue({
+          title: magazine.title,
+          description: magazine.description,
+          editionNumber: magazine.editionNumber,
+        });
       } else {
         message.error("Magazine not found.");
       }
     } catch (error) {
       message.error("Error fetching magazine details.");
-      console.error("Error fetching magazine details:", error.message);
+    } finally {
+      setFetching(false);
     }
   };
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const res = await getMagazineHistory1ById(magazineId);
+        if (res.success) {
+          const sorted = res.data.sort((a, b) => b.versionNumber - a.versionNumber);
+          setVersionHistory(sorted);
+
+          if (versionNumber) {
+            const current = parseInt(versionNumber);
+            const prev = sorted.find((v) => v.versionNumber === current - 1);
+            if (prev) setPreviousVersion(prev.versionNumber);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching magazine history", err);
+      }
+    };
+
+    if (versionNumber) fetchHistory();
+  }, [versionNumber, magazineId]);
 
   const handleFormSubmit = async (values) => {
     setLoading(true);
     try {
       if (!imageUrl || !pdfUrl) {
-        message.error(
-          "Please upload both an image and a PDF before submitting."
-        );
+        message.error("Please upload both an image and a PDF.");
         setLoading(false);
         return;
       }
 
       const payload = {
         ...values,
-        magazineThumbnail: imageUrl, // Firebase Image URL
-        magazinePdf: pdfUrl, // Firebase PDF URL
+        magazineThumbnail: imageUrl,
+        magazinePdf: pdfUrl,
         editionNumber: values.editionNumber,
       };
 
-      const response = await updateMagazine(magazineId, payload);
+      const response = await updateMagazine1(magazineId, payload);
       if (response.success) {
         message.success("Magazine updated successfully!");
-        navigate("/manage-magazine");
+        navigate("/manage-magazines1");
       } else {
         message.error("Failed to update magazine.");
       }
@@ -114,13 +149,8 @@ function UpdateMagazinePage2() {
 
     uploadTask.on(
       "state_changed",
-      (snapshot) => {
-        // Optional: Progress tracking
-      },
-      (error) => {
-        message.error("Image upload failed!");
-        setImageUploading(false);
-      },
+      null,
+      () => message.error("Image upload failed!"),
       async () => {
         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
         setImageUrl(downloadURL);
@@ -137,13 +167,8 @@ function UpdateMagazinePage2() {
 
     uploadTask.on(
       "state_changed",
-      (snapshot) => {
-        // Optional: Progress tracking
-      },
-      (error) => {
-        message.error("PDF upload failed!");
-        setPdfUploading(false);
-      },
+      null,
+      () => message.error("PDF upload failed!"),
       async () => {
         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
         setPdfUrl(downloadURL);
@@ -153,23 +178,33 @@ function UpdateMagazinePage2() {
     );
   };
 
-  if (!initialValues.title) {
-    return <div>Loading...</div>; // Show a loading state until initialValues are set
+  const handleRevert = async () => {
+    const current = parseInt(versionNumber);
+    if (!previousVersion || !current) {
+      message.error("Invalid version to revert.");
+      return;
+    }
+
+    try {
+      const res = await revertMagazine1ByversionNumber(magazineId, current);
+      if (res.success) {
+        message.success(`Successfully reverted to version ${previousVersion}`);
+        navigate("/manage-magazines1");
+      } else {
+        message.error(res.message || "Failed to revert version.");
+      }
+    } catch (err) {
+      message.error("Unexpected error while reverting.");
+    }
+  };
+
+  if (fetching) {
+    return <Spin size="large" style={{ marginTop: 100 }} />;
   }
 
   return (
-    <div>
-      <h1>Update Magazine</h1>
-      <div
-        style={{
-          maxWidth: "80vw",
-          margin: "auto",
-          padding: "20px",
-          display: "flex",
-          gap: "20px",
-        }}
-      >
-        {/* LEFT SIDE - Image Upload */}
+    <div style={{ padding: '20px' }}>
+      <div style={{ display: "flex", gap: "20px" }}>
         <Card title="Magazine Thumbnail" style={{ width: "40%" }}>
           <Upload
             customRequest={handleImageUpload}
@@ -190,18 +225,27 @@ function UpdateMagazinePage2() {
           )}
         </Card>
 
-        {/* RIGHT SIDE - General Information */}
         <Card title="General Information" style={{ width: "60%" }}>
+          {previousVersion && (
+            <Button
+              type="dashed"
+              danger
+              onClick={handleRevert}
+              style={{ marginBottom: "20px" }}
+            >
+              Revert to Version {previousVersion}
+            </Button>
+          )}
           <Form
             form={form}
             layout="vertical"
             onFinish={handleFormSubmit}
-            initialValues={initialValues} // Use initialValues to pre-populate fields
+            initialValues={initialValues}
           >
             <Form.Item
               label="Title"
               name="title"
-              rules={[{ required: false, message: "Title is required" }]} // Make title optional
+              rules={[{ required: true, message: "Title is required" }]}
             >
               <Input placeholder="Enter magazine title" />
             </Form.Item>
@@ -209,7 +253,7 @@ function UpdateMagazinePage2() {
             <Form.Item
               label="Description"
               name="description"
-              rules={[{ required: false, message: "Description is required" }]} // Make description optional
+              rules={[{ required: true, message: "Description is required" }]}
             >
               <TextArea rows={4} placeholder="Enter magazine description" />
             </Form.Item>
@@ -217,15 +261,12 @@ function UpdateMagazinePage2() {
             <Form.Item
               label="Edition Number"
               name="editionNumber"
-              rules={[
-                { required: false, message: "Edition number is required" },
-              ]} // Make editionNumber optional
+              rules={[{ required: true, message: "Edition number is required" }]}
             >
               <Input placeholder="Enter edition number" />
             </Form.Item>
 
-            {/* PDF Upload */}
-            <Form.Item label="Magazine PDF" name="magazinePdf">
+            <Form.Item label="Magazine PDF">
               <Upload
                 customRequest={handlePdfUpload}
                 showUploadList={false}
@@ -255,4 +296,4 @@ function UpdateMagazinePage2() {
   );
 }
 
-export default UpdateMagazinePage2;
+export default UpdateMagazinePage1;
