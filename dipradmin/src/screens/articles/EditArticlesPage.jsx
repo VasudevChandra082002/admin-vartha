@@ -21,8 +21,9 @@ import {
 import { storage } from "../../service/firebaseConfig";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { getCategories } from "../../service/categories/CategoriesApi";
-import moment from "moment";
-
+// import moment from "moment";
+// import moment from "moment/moment";
+import moment from "moment/moment";
 const { TextArea } = Input;
 const { Option } = Select;
 

@@ -233,6 +233,7 @@ const Sidebar = () => {
           </>
         )}
 
+
         {isAdminOrModerator && (
           <Menu.Item key="/manage-moderation" icon={<VideoCameraAddOutlined />}>
             Moderation

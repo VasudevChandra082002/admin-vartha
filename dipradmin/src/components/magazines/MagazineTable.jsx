@@ -10,7 +10,7 @@ import {
   Input,
   Space,
   Tag,
-  Descriptions
+  Descriptions,
 } from "antd";
 import {
   getMagazines,
@@ -230,14 +230,27 @@ function MagazineTable() {
             icon={<EditOutlined />}
             onClick={() => handleEdit(record._id)}
           />
-          <Popconfirm
+          {/* <Popconfirm
             title="Are you sure to delete this magazine?"
             onConfirm={() => handleDelete(record._id)}
             okText="Yes"
             cancelText="No"
           >
-            <Button type="danger" icon={<DeleteOutlined />} />
-          </Popconfirm>
+            <Button danger icon={<DeleteOutlined />} />
+          </Popconfirm> */}
+
+          {(userRole === "admin" ||
+            (userRole === "moderator" &&
+              record.createdBy?._id === localStorage.getItem("userId"))) && (
+            <Popconfirm
+              title="Are you sure to delete this banner?"
+              onConfirm={() => handleDelete(record._id)}
+              okText="Yes"
+              cancelText="No"
+            >
+              <Button danger icon={<DeleteOutlined />} />
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -267,135 +280,137 @@ function MagazineTable() {
       />
 
       {/* Magazine Details Modal */}
-     <Modal
-  title="Magazine Details"
-  visible={isModalVisible}
-  onCancel={() => setIsModalVisible(false)}
-  footer={null}
-  width={800}
->
-  {selectedMagazine && (
-    <>
-      <Image
-        width="100%"
-        height={300}
-        src={selectedMagazine.magazineThumbnail}
-        alt="Magazine Thumbnail"
-        style={{ marginBottom: 20 }}
-      />
-      <Descriptions bordered column={1}>
-        <Descriptions.Item label="Title">
-          {selectedMagazine.title}
-        </Descriptions.Item>
-        <Descriptions.Item label="Edition Number">
-          {selectedMagazine.editionNumber || "N/A"}
-        </Descriptions.Item>
-        <Descriptions.Item label="Published Date">
-          {new Date(selectedMagazine.createdTime).toLocaleDateString()}
-        </Descriptions.Item>
-        <Descriptions.Item label="Status">
-          <Tag
-            color={selectedMagazine.status === "approved" ? "green" : "orange"}
-          >
-            {selectedMagazine.status.toUpperCase()}
-          </Tag>
-        </Descriptions.Item>
-        <Descriptions.Item label="Created By">
-          {selectedMagazine.createdBy?.displayName || "N/A"}
-        </Descriptions.Item>
-        <Descriptions.Item label="PDF Link">
-          <a
-            href={selectedMagazine.magazinePdf}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            View PDF
-          </a>
-        </Descriptions.Item>
-        <Descriptions.Item label="Description">
-          {selectedMagazine.description}
-        </Descriptions.Item>
-        <Descriptions.Item label="Kannada Description">
-          {selectedMagazine.kannada?.description || "N/A"}
-        </Descriptions.Item>
-        <Descriptions.Item label="Hindi Description">
-          {selectedMagazine.hindi?.description || "N/A"}
-        </Descriptions.Item>
-        <Descriptions.Item label="English Description">
-          {selectedMagazine.english?.description || "N/A"}
-        </Descriptions.Item>
-      </Descriptions>
-    </>
-  )}
-</Modal>
-
+      <Modal
+        title="Magazine Details"
+        visible={isModalVisible}
+        onCancel={() => setIsModalVisible(false)}
+        footer={null}
+        width={800}
+      >
+        {selectedMagazine && (
+          <>
+            <Image
+              width="100%"
+              height={300}
+              src={selectedMagazine.magazineThumbnail}
+              alt="Magazine Thumbnail"
+              style={{ marginBottom: 20 }}
+            />
+            <Descriptions bordered column={1}>
+              <Descriptions.Item label="Title">
+                {selectedMagazine.title}
+              </Descriptions.Item>
+              <Descriptions.Item label="Edition Number">
+                {selectedMagazine.editionNumber || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Published Date">
+                {new Date(selectedMagazine.createdTime).toLocaleDateString()}
+              </Descriptions.Item>
+              <Descriptions.Item label="Status">
+                <Tag
+                  color={
+                    selectedMagazine.status === "approved" ? "green" : "orange"
+                  }
+                >
+                  {selectedMagazine.status.toUpperCase()}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Created By">
+                {selectedMagazine.createdBy?.displayName || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="PDF Link">
+                <a
+                  href={selectedMagazine.magazinePdf}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  View PDF
+                </a>
+              </Descriptions.Item>
+              <Descriptions.Item label="Description">
+                {selectedMagazine.description}
+              </Descriptions.Item>
+              <Descriptions.Item label="Kannada Description">
+                {selectedMagazine.kannada?.description || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Hindi Description">
+                {selectedMagazine.hindi?.description || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="English Description">
+                {selectedMagazine.english?.description || "N/A"}
+              </Descriptions.Item>
+            </Descriptions>
+          </>
+        )}
+      </Modal>
 
       {/* Approval Modal */}
-     <Modal
-  title="Approve Magazine"
-  visible={isApprovalModalVisible}
-  onOk={handleApprove}
-  onCancel={() => setIsApprovalModalVisible(false)}
-  confirmLoading={approving}
-  width={800}
-  okText="Approve"
-  cancelText="Cancel"
->
-  {selectedMagazine && (
-    <>
-      <Image
-        width="100%"
-        height={300}
-        src={selectedMagazine.magazineThumbnail}
-        alt="Magazine Thumbnail"
-        style={{ marginBottom: 20 }}
-      />
-      <Descriptions bordered column={1}>
-        <Descriptions.Item label="Title">
-          {selectedMagazine.title}
-        </Descriptions.Item>
-        <Descriptions.Item label="Edition Number">
-          {selectedMagazine.editionNumber || "N/A"}
-        </Descriptions.Item>
-        <Descriptions.Item label="Published Date">
-          {new Date(selectedMagazine.createdTime).toLocaleDateString()}
-        </Descriptions.Item>
-        <Descriptions.Item label="Status">
-          <Tag
-            color={selectedMagazine.status === "approved" ? "green" : "orange"}
-          >
-            {selectedMagazine.status.toUpperCase()}
-          </Tag>
-        </Descriptions.Item>
-        <Descriptions.Item label="Created By">
-          {selectedMagazine.createdBy?.displayName || "N/A"}
-        </Descriptions.Item>
-        <Descriptions.Item label="PDF Link">
-          <a
-            href={selectedMagazine.magazinePdf}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            View PDF
-          </a>
-        </Descriptions.Item>
-        <Descriptions.Item label="Description">
-          {selectedMagazine.description || "N/A"}
-        </Descriptions.Item>
-        <Descriptions.Item label="Kannada Description">
-          {selectedMagazine.kannada?.description || "N/A"}
-        </Descriptions.Item>
-        <Descriptions.Item label="Hindi Description">
-          {selectedMagazine.hindi?.description || "N/A"}
-        </Descriptions.Item>
-        <Descriptions.Item label="English Description">
-          {selectedMagazine.english?.description || "N/A"}
-        </Descriptions.Item>
-      </Descriptions>
-    </>
-  )}
-</Modal>
-
+      <Modal
+        title="Approve Magazine"
+        visible={isApprovalModalVisible}
+        onOk={handleApprove}
+        onCancel={() => setIsApprovalModalVisible(false)}
+        confirmLoading={approving}
+        width={800}
+        okText="Approve"
+        cancelText="Cancel"
+      >
+        {selectedMagazine && (
+          <>
+            <Image
+              width="100%"
+              height={300}
+              src={selectedMagazine.magazineThumbnail}
+              alt="Magazine Thumbnail"
+              style={{ marginBottom: 20 }}
+            />
+            <Descriptions bordered column={1}>
+              <Descriptions.Item label="Title">
+                {selectedMagazine.title}
+              </Descriptions.Item>
+              <Descriptions.Item label="Edition Number">
+                {selectedMagazine.editionNumber || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Published Date">
+                {new Date(selectedMagazine.createdTime).toLocaleDateString()}
+              </Descriptions.Item>
+              <Descriptions.Item label="Status">
+                <Tag
+                  color={
+                    selectedMagazine.status === "approved" ? "green" : "orange"
+                  }
+                >
+                  {selectedMagazine.status.toUpperCase()}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Created By">
+                {selectedMagazine.createdBy?.displayName || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="PDF Link">
+                <a
+                  href={selectedMagazine.magazinePdf}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  View PDF
+                </a>
+              </Descriptions.Item>
+              <Descriptions.Item label="Description">
+                {selectedMagazine.description || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Kannada Description">
+                {selectedMagazine.kannada?.description || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Hindi Description">
+                {selectedMagazine.hindi?.description || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="English Description">
+                {selectedMagazine.english?.description || "N/A"}
+              </Descriptions.Item>
+            </Descriptions>
+          </>
+        )}
+      </Modal>
     </>
   );
 }

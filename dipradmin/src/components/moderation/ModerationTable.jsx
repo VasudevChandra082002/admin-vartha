@@ -122,6 +122,7 @@ function ModerationTable() {
             onClick={() => handleEdit(record.key)}
           /> */}
           <Button
+          danger
             icon={<DeleteOutlined />}
             onClick={() => handleDelete(record.key)} // Call delete handler
           />

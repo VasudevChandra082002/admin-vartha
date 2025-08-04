@@ -224,14 +224,25 @@ function ArticleTable() {
             icon={<EditOutlined />}
             onClick={() => handleEdit(record._id)}
           />
-          <Popconfirm
+          {/* <Popconfirm
             title="Are you sure to delete this article?"
             onConfirm={() => handleDelete(record._id)}
             okText="Yes"
             cancelText="No"
           >
             <Button danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          </Popconfirm> */}
+
+          {(userRole === "admin" || (userRole === "moderator" && record.createdBy?._id === localStorage.getItem("userId"))) && (
+            <Popconfirm
+              title="Are you sure to delete this article?"
+              onConfirm={() => handleDelete(record._id)}
+              okText="Yes"
+              cancelText="No"
+            >
+              <Button danger icon={<DeleteOutlined />} />
+            </Popconfirm>
+          )}
         </Space>
       ),
     },

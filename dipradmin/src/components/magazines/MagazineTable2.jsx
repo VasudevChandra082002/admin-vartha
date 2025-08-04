@@ -238,7 +238,7 @@ function MagazineTable2() {
           handleEdit(record._id);
         }}
       />
-      <Popconfirm
+      {/* <Popconfirm
         title="Are you sure to delete this magazine?"
         onConfirm={(e) => {
           e?.stopPropagation?.(); // Optional chaining in case e is undefined
@@ -253,7 +253,18 @@ function MagazineTable2() {
           icon={<DeleteOutlined />} 
           onClick={(e) => e.stopPropagation()}
         />
-      </Popconfirm>
+      </Popconfirm> */}
+
+      {(userRole === "admin" || (userRole === "moderator" && record.createdBy?._id === localStorage.getItem("userId"))) && (
+                     <Popconfirm
+                       title="Are you sure to delete this banner?"
+                       onConfirm={() => handleDelete(record._id)}
+                       okText="Yes"
+                       cancelText="No"
+                     >
+                       <Button danger icon={<DeleteOutlined />} />
+                     </Popconfirm>
+                   )}
     </Space>
   ),
 }
