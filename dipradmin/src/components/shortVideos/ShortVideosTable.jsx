@@ -9,16 +9,21 @@ import {
   Modal,
   Input,
   Tag,
-  Descriptions
+  Descriptions,
 } from "antd";
 import { EditOutlined } from "@ant-design/icons"; // make sure it's imported
 
-import { EyeOutlined, DeleteOutlined, SearchOutlined, CheckOutlined } from "@ant-design/icons";
-import { 
+import {
+  EyeOutlined,
+  DeleteOutlined,
+  SearchOutlined,
+  CheckOutlined,
+} from "@ant-design/icons";
+import {
   getShortVideos,
   deleteById,
   approveVideo, // You'll need to create this service function
-  getHistoryOfShortVideosById
+  getHistoryOfShortVideosById,
 } from "../../service/ShortVideos/ShortVideoservice";
 import { useNavigate } from "react-router-dom";
 
@@ -72,7 +77,7 @@ function ShortVideosTable() {
     }
   };
 
-    const handleEdit = async (id) => {
+  const handleEdit = async (id) => {
     try {
       const res = await getHistoryOfShortVideosById(id);
       if (res.success && Array.isArray(res.data)) {
@@ -85,7 +90,9 @@ function ShortVideosTable() {
         navigate(`/edit-short-video/${id}`);
       }
     } catch (err) {
-      message.warning("Error checking video history. Redirecting to edit page.");
+      message.warning(
+        "Error checking video history. Redirecting to edit page."
+      );
       navigate(`/edit-short-video/${id}`);
     }
   };
@@ -108,15 +115,15 @@ function ShortVideosTable() {
 
   const handleApprove = async () => {
     if (!selectedVideo) return;
-    
+
     setApproving(true);
     try {
       const response = await approveVideo(selectedVideo._id);
       if (response.success) {
         message.success("Video approved successfully!");
-        const updatedVideos = videos.map(video => 
-          video._id === selectedVideo._id 
-            ? { ...video, status: "approved" } 
+        const updatedVideos = videos.map((video) =>
+          video._id === selectedVideo._id
+            ? { ...video, status: "approved" }
             : video
         );
         setVideos(updatedVideos);
@@ -171,20 +178,25 @@ function ShortVideosTable() {
       dataIndex: "total_Likes",
       key: "total_Likes",
     },
-     {
+    {
       title: "Created By",
       dataIndex: "createdBy",
       key: "createdBy",
-      render: (_, record) => record.createdBy?.displayName
+      render: (_, record) => record.createdBy?.displayName,
     },
     {
       title: "Status",
       dataIndex: "status",
       key: "status",
       render: (status, record) => (
-        <Tag 
+        <Tag
           color={status === "approved" ? "green" : "orange"}
-          style={{ cursor: userRole === "admin" && status === "pending" ? "pointer" : "default" }}
+          style={{
+            cursor:
+              userRole === "admin" && status === "pending"
+                ? "pointer"
+                : "default",
+          }}
           onClick={() => handleStatusClick(record)}
         >
           {status.toUpperCase()}
@@ -193,54 +205,61 @@ function ShortVideosTable() {
       ),
     },
     {
-  title: "Actions",
-  key: "actions",
-  render: (_, record) => (
-    <Space>
-      <Button
-        type="default"
-        icon={<EyeOutlined />}
-        onClick={() => handleViewInModal(record.video_url)}
-        style={{ marginRight: 8 }}
-      >
-        View
-      </Button>
-      <Button
-        type="default"
-        icon={<EyeOutlined />}
-        onClick={() => handleViewInNewTab(record.video_url)}
-      >
-        {/* View in New Tab */}
-      </Button>
+      title: "Actions",
+      key: "actions",
+      render: (_, record) => (
+        <Space>
+          <Button
+            type="default"
+            icon={<EyeOutlined />}
+            onClick={() => handleViewInModal(record.video_url)}
+            style={{ marginRight: 8 }}
+          >
+            View
+          </Button>
+          <Button
+            type="default"
+            icon={<EyeOutlined />}
+            onClick={() => handleViewInNewTab(record.video_url)}
+          >
+            {/* View in New Tab */}
+          </Button>
 
-      {/* ✅ Edit Icon */}
-      <Button
-        type="default"
-        icon={<EditOutlined />}
-        // onClick={() => navigate(`/short-video-history/${record._id}`)}
-        onClick={() => handleEdit(record._id)}
-      />
+          {/* ✅ Edit Icon */}
+          <Button
+            type="default"
+            icon={<EditOutlined />}
+            // onClick={() => navigate(`/short-video-history/${record._id}`)}
+            onClick={() => handleEdit(record._id)}
+          />
 
-      <Popconfirm
-        title="Are you sure to delete this video?"
-        onConfirm={() => handleDelete(record._id)}
-        okText="Yes"
-        cancelText="No"
-      >
-        <Button type="danger" icon={<DeleteOutlined />} />
-      </Popconfirm>
-    </Space>
-  ),
-}
-
+          {(userRole === "admin" ||
+            (userRole === "moderator" &&
+              record.createdBy?._id === localStorage.getItem("userId"))) && (
+            <Popconfirm
+              title="Are you sure to delete this banner?"
+              onConfirm={() => handleDelete(record._id)}
+              okText="Yes"
+              cancelText="No"
+            >
+              <Button danger icon={<DeleteOutlined />} />
+            </Popconfirm>
+          )}
+        </Space>
+      ),
+    },
   ];
-
-
 
   return (
     <div>
       {/* Search Bar */}
-      <div style={{ marginBottom: 16, display: "flex", justifyContent: "flex-end" }}>
+      <div
+        style={{
+          marginBottom: 16,
+          display: "flex",
+          justifyContent: "flex-end",
+        }}
+      >
         <Input
           placeholder="Search by Title"
           value={searchText}
@@ -274,54 +293,57 @@ function ShortVideosTable() {
       </Modal>
 
       {/* Approval Modal */}
-    <Modal
-  title="Approve Video"
-  visible={isApprovalModalVisible}
-  onOk={handleApprove}
-  onCancel={() => setIsApprovalModalVisible(false)}
-  confirmLoading={approving}
-  width={800}
-  okText="Approve"
-  cancelText="Cancel"
->
-  {selectedVideo && (
-    <div>
-      <Descriptions bordered column={1}>
-        <Descriptions.Item label="Title">
-          {selectedVideo.title || "N/A"}
-        </Descriptions.Item>
-        <Descriptions.Item label="Description">
-          {selectedVideo.description || "N/A"}
-        </Descriptions.Item>
-        <Descriptions.Item label="Created By">
-          {selectedVideo.createdBy?.displayName || "N/A"}
-        </Descriptions.Item>
-        <Descriptions.Item label="Total Likes">
-          {selectedVideo.total_Likes || 0}
-        </Descriptions.Item>
-        <Descriptions.Item label="Status">
-          <Tag color={selectedVideo.status === "approved" ? "green" : "orange"}>
-            {selectedVideo.status.toUpperCase()}
-          </Tag>
-        </Descriptions.Item>
-        <Descriptions.Item label="Thumbnail">
-          <Image
-            width={200}
-            src={selectedVideo.thumbnail}
-            alt="Video Thumbnail"
-          />
-        </Descriptions.Item>
-        <Descriptions.Item label="Preview">
-          <video width="100%" height="240" controls>
-            <source src={selectedVideo.video_url} type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
-        </Descriptions.Item>
-      </Descriptions>
-    </div>
-  )}
-</Modal>
-
+      <Modal
+        title="Approve Video"
+        visible={isApprovalModalVisible}
+        onOk={handleApprove}
+        onCancel={() => setIsApprovalModalVisible(false)}
+        confirmLoading={approving}
+        width={800}
+        okText="Approve"
+        cancelText="Cancel"
+      >
+        {selectedVideo && (
+          <div>
+            <Descriptions bordered column={1}>
+              <Descriptions.Item label="Title">
+                {selectedVideo.title || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Description">
+                {selectedVideo.description || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Created By">
+                {selectedVideo.createdBy?.displayName || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Total Likes">
+                {selectedVideo.total_Likes || 0}
+              </Descriptions.Item>
+              <Descriptions.Item label="Status">
+                <Tag
+                  color={
+                    selectedVideo.status === "approved" ? "green" : "orange"
+                  }
+                >
+                  {selectedVideo.status.toUpperCase()}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Thumbnail">
+                <Image
+                  width={200}
+                  src={selectedVideo.thumbnail}
+                  alt="Video Thumbnail"
+                />
+              </Descriptions.Item>
+              <Descriptions.Item label="Preview">
+                <video width="100%" height="240" controls>
+                  <source src={selectedVideo.video_url} type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              </Descriptions.Item>
+            </Descriptions>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

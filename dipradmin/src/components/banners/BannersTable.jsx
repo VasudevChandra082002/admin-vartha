@@ -174,7 +174,7 @@ function BannersTable() {
               okText="Yes"
               cancelText="No"
             >
-              <Button type="danger" icon={<DeleteOutlined />} />
+              <Button danger icon={<DeleteOutlined />} />
             </Popconfirm>
           )}
         </Space>

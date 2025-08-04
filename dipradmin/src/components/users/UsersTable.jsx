@@ -1,27 +1,32 @@
 import React, { useEffect, useState } from "react";
-import { 
-  Table, 
-  Avatar, 
-  Tag, 
-  Button, 
-  Space, 
-  Tooltip, 
-  Tabs, 
-  Modal, 
-  Form, 
-  Input, 
+import {
+  Table,
+  Avatar,
+  Tag,
+  Button,
+  Space,
+  Tooltip,
+  Tabs,
+  Modal,
+  Form,
+  Input,
   Select,
   message,
-  Descriptions
+  Descriptions,
 } from "antd";
-import { 
-  EditOutlined, 
-  DeleteOutlined, 
-  EyeOutlined, 
+import {
+  EditOutlined,
+  DeleteOutlined,
+  EyeOutlined,
   UserOutlined,
-  PlusOutlined 
+  PlusOutlined,
 } from "@ant-design/icons";
-import { getUsers, createModerator, getUserById, deleteUser } from "../../service/User/UserApi";
+import {
+  getUsers,
+  createModerator,
+  getUserById,
+  deleteUser,
+} from "../../service/User/UserApi";
 const moment = window.moment;
 const { TabPane } = Tabs;
 const { Option } = Select;
@@ -64,20 +69,20 @@ function UsersTable() {
 
   const filterUsersByRole = () => {
     let filtered = [];
-    switch(activeTab) {
+    switch (activeTab) {
       case "users":
-        filtered = users.filter(user => user.role === "content");
+        filtered = users.filter((user) => user.role === "content");
         break;
       case "moderators":
         // If current user is moderator, don't show moderators tab
         if (currentUserRole !== "moderator") {
-          filtered = users.filter(user => user.role === "moderator");
+          filtered = users.filter((user) => user.role === "moderator");
         }
         break;
       case "admins":
         // Only show admins tab if current user is admin
         if (currentUserRole === "admin") {
-          filtered = users.filter(user => user.role === "admin");
+          filtered = users.filter((user) => user.role === "admin");
         }
         break;
       default:
@@ -198,7 +203,7 @@ function UsersTable() {
       dataIndex: "phone_Number",
       key: "phone_Number",
     },
-  
+
     {
       title: "Created Time",
       dataIndex: "createdTime",
@@ -212,15 +217,16 @@ function UsersTable() {
       render: (time) =>
         time ? moment(time).format("YYYY-MM-DD HH:mm") : "Never Logged In",
     },
-      {
+    {
       title: "Role",
       dataIndex: "role",
       key: "role",
       render: (role) => (
-        <Tag color={
-          role === "admin" ? "red" : 
-          role === "moderator" ? "blue" : "green"
-        }>
+        <Tag
+          color={
+            role === "admin" ? "red" : role === "moderator" ? "blue" : "green"
+          }
+        >
           {role.toUpperCase()}
         </Tag>
       ),
@@ -262,32 +268,28 @@ function UsersTable() {
   // Determine which tabs to show based on user role
   const getTabs = () => {
     if (currentUserRole === "moderator") {
-      return [
-        <TabPane tab="Users" key="users" />
-      ];
+      return [<TabPane tab="Users" key="users" />];
     } else if (currentUserRole === "admin") {
       return [
         <TabPane tab="Users" key="users" />,
         <TabPane tab="Moderators" key="moderators" />,
-        <TabPane tab="Admins" key="admins" />
+        <TabPane tab="Admins" key="admins" />,
       ];
     }
     // Default return if no role matches (shouldn't happen)
-    return [
-      <TabPane tab="Users" key="users" />
-    ];
+    return [<TabPane tab="Users" key="users" />];
   };
 
   return (
     <div>
-      <Tabs 
-        activeKey={activeTab} 
+      <Tabs
+        activeKey={activeTab}
         onChange={handleTabChange}
         tabBarExtraContent={
           currentUserRole === "admin" && activeTab === "moderators" ? (
-            <Button 
-              type="primary" 
-              icon={<PlusOutlined />} 
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
               onClick={handleCreateModerator}
             >
               Create Moderator
@@ -315,17 +317,13 @@ function UsersTable() {
         onCancel={handleModalCancel}
         footer={null}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSubmit}
-        >
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
             name="email"
             label="Email"
             rules={[
               { required: true, message: "Please input the email!" },
-              { type: "email", message: "Please enter a valid email!" }
+              { type: "email", message: "Please enter a valid email!" },
             ]}
           >
             <Input />
@@ -336,7 +334,7 @@ function UsersTable() {
             label="Password"
             rules={[
               { required: true, message: "Please input the password!" },
-              { min: 6, message: "Password must be at least 6 characters!" }
+              { min: 6, message: "Password must be at least 6 characters!" },
             ]}
           >
             <Input.Password />
@@ -345,7 +343,9 @@ function UsersTable() {
           <Form.Item
             name="displayName"
             label="Display Name"
-            rules={[{ required: true, message: "Please input the display name!" }]}
+            rules={[
+              { required: true, message: "Please input the display name!" },
+            ]}
           >
             <Input />
           </Form.Item>
@@ -355,7 +355,10 @@ function UsersTable() {
             label="Phone Number"
             rules={[
               { required: true, message: "Please input the phone number!" },
-              { pattern: /^[0-9]{10}$/, message: "Please enter a valid 10-digit phone number!" }
+              {
+                pattern: /^[0-9]{10}$/,
+                message: "Please enter a valid 10-digit phone number!",
+              },
             ]}
           >
             <Input />
@@ -390,14 +393,25 @@ function UsersTable() {
                 <Avatar icon={<UserOutlined />} size={64} />
               )}
             </Descriptions.Item>
-            <Descriptions.Item label="Name">{currentUser.displayName}</Descriptions.Item>
-            <Descriptions.Item label="Email">{currentUser.email}</Descriptions.Item>
-            <Descriptions.Item label="Phone Number">{currentUser.phone_Number}</Descriptions.Item>
+            <Descriptions.Item label="Name">
+              {currentUser.displayName}
+            </Descriptions.Item>
+            <Descriptions.Item label="Email">
+              {currentUser.email}
+            </Descriptions.Item>
+            <Descriptions.Item label="Phone Number">
+              {currentUser.phone_Number}
+            </Descriptions.Item>
             <Descriptions.Item label="Role">
-              <Tag color={
-                currentUser.role === "admin" ? "red" : 
-                currentUser.role === "moderator" ? "blue" : "green"
-              }>
+              <Tag
+                color={
+                  currentUser.role === "admin"
+                    ? "red"
+                    : currentUser.role === "moderator"
+                    ? "blue"
+                    : "green"
+                }
+              >
                 {currentUser.role.toUpperCase()}
               </Tag>
             </Descriptions.Item>
@@ -405,9 +419,9 @@ function UsersTable() {
               {moment(currentUser.createdTime).format("YYYY-MM-DD HH:mm")}
             </Descriptions.Item>
             <Descriptions.Item label="Last Logged In">
-              {currentUser.last_logged_in ? 
-                moment(currentUser.last_logged_in).format("YYYY-MM-DD HH:mm") : 
-                "Never Logged In"}
+              {currentUser.last_logged_in
+                ? moment(currentUser.last_logged_in).format("YYYY-MM-DD HH:mm")
+                : "Never Logged In"}
             </Descriptions.Item>
           </Descriptions>
         )}
@@ -422,8 +436,17 @@ function UsersTable() {
         okText="Delete"
         okButtonProps={{ danger: true }}
         cancelText="Cancel"
+        style={{
+          top: "50% ",
+          transform: "translateY(-50%)", // Optional: fine-tune vertical alignment
+          display: "flex",
+          justifyContent: "center",
+        }}
       >
-        <p>Are you sure you want to delete this user? This action cannot be undone.</p>
+        <p>
+          Are you sure you want to delete this user? This action cannot be
+          undone.
+        </p>
       </Modal>
     </div>
   );

@@ -223,16 +223,16 @@ function LongVideoTable() {
               onClick={() => handleEdit(record._id)}
             />
           </Tooltip>
-          <Popconfirm
-            title="Are you sure you want to delete this video?"
-            onConfirm={() => handleDelete(record._id)}
-            okText="Yes"
-            cancelText="No"
-          >
-            <Tooltip title="Delete">
-              <Button danger icon={<DeleteOutlined />} />
-            </Tooltip>
-          </Popconfirm>
+          {(userRole === "admin" || (userRole === "moderator" && record.createdBy?._id === localStorage.getItem("userId"))) && (
+                         <Popconfirm
+                           title="Are you sure to delete this banner?"
+                           onConfirm={() => handleDelete(record._id)}
+                           okText="Yes"
+                           cancelText="No"
+                         >
+                           <Button danger icon={<DeleteOutlined />} />
+                         </Popconfirm>
+                       )}
         </Space>
       ),
     },
