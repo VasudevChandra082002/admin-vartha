@@ -265,7 +265,7 @@ function AddMagazinePage() {
         // Add other required fields based on your model
       };
 
-      console.log("Submitting payload:", payload); // Debug log
+      // console.log("Submitting payload:", payload); // Debug log
 
       const response = await createMagazine(payload);
       

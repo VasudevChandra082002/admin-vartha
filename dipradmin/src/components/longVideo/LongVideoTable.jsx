@@ -43,7 +43,7 @@ function LongVideoTable() {
     try {
       const response = await getShortVideos();
 
-      console.log("Video table response", response);
+      // console.log("Video table response", response);
       if (response.success) {
         setVideos(response.data);
         setFilteredVideos(response.data);

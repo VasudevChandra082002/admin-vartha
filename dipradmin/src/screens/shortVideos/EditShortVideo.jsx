@@ -104,7 +104,7 @@ function EditShortVideo() {
         versionNumber
       );
 
-      console.log("Revert response:", res);
+      // console.log("Revert response:", res);
       if (res.success) {
         message.success(`Reverted to version ${previousVersion}`);
         navigate("/manage-shortvideos");

@@ -210,7 +210,8 @@ function ShortVideosTable() {
       render: (_, record) => (
         <Space>
           <Button
-            type="default"
+            type="default"env
+            
             icon={<EyeOutlined />}
             onClick={() => handleViewInModal(record.video_url)}
             style={{ marginRight: 8 }}

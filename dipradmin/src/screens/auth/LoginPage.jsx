@@ -260,15 +260,15 @@ function LoginPage() {
       }
 
       localStorage.setItem("token", token);
-      console.log("Received token:", token);
+      // console.log("Received token:", token);
 
       // Decode the token
       try {
         const decoded = jwtDecode(token);
-        console.log("Decoded token:", decoded);
+        // console.log("Decoded token:", decoded);
 
         const role = decoded.role;
-        console.log("Role:", role);
+        // console.log("Role:", role);
 
         if (!role) {
           throw new Error("Role not found in token");

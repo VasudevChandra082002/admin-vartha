@@ -51,8 +51,8 @@ function App() {
     // Get the role from localStorage instead of cookies
     const storedRole = localStorage.getItem("role");
     const token = localStorage.getItem("token");
-    console.log("Token from localStorage:", token);
-    console.log("Stored Role from localStorage:", storedRole);
+    // console.log("Token from localStorage:", token);
+    // console.log("Stored Role from localStorage:", storedRole);
     if (storedRole && token) {
       setRole(storedRole);
       setIsAuthenticated(true);
@@ -62,7 +62,7 @@ function App() {
   const handleLogin = () => {
     setIsAuthenticated(true);
     const storedRole = localStorage.getItem("role");
-    console.log("Role after login:", storedRole);
+    // console.log("Role after login:", storedRole);
     setRole(storedRole);
   };
 

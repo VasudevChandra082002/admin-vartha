@@ -49,7 +49,7 @@ const [previousVersion, setPreviousVersion] = useState(null);
     const fetchArticle = async () => {
       try {
         const response = await getArticleById(articleId);
-        console.log("edit article page article id", response);
+        // console.log("edit article page article id", response);
         if (response.success) {
           const data = response.data;
           const formattedValues = {
@@ -203,7 +203,7 @@ const handleRevert = async () => {
   }
 
   try {
-    console.log("Reverting to version:", previousVersion);
+    // console.log("Reverting to version:", previousVersion);
     const res = await revertNewsByVersionNumber(articleId, currentVer);
     if (res.success) {
       message.success(`Successfully reverted to version ${previousVersion}.`);

@@ -48,7 +48,7 @@ function ArticleTable() {
   const fetchArticles = async () => {
     try {
       const response = await getArticles();
-      console.log("Article table response", response);
+      // console.log("Article table response", response);
       if (response.success) {
         setArticles(response.data);
         setFilteredArticles(response.data);

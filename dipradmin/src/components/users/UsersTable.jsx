@@ -143,7 +143,7 @@ function UsersTable() {
 
   // Action handlers
   const handleEdit = (userId) => {
-    console.log(`Edit user: ${userId}`);
+    // console.log(`Edit user: ${userId}`);
     // Add logic to navigate to edit page or open a modal
   };
 
