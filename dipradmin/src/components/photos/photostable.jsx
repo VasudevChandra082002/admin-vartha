@@ -21,7 +21,7 @@ import {
   getAllPhotos,
   deletePhotosById,
   approvePhotosById,
-} from "../../service/Photos/PhotosService";
+} from "../../service/Photos/photosService";
 import { useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
