@@ -19,7 +19,7 @@ import {
   getCategories,
   deleteCategory,
   approveCategory,
-} from "../../service/Category/CategoryService";
+} from "../../service/category/categoryservice";
 
 const { Title } = Typography;
 
