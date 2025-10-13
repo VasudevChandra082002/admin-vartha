@@ -46,7 +46,7 @@ import PhtotosPage from "./screens/photos/Photos.jsx";
 import AddPhotos from "./screens/photos/Addphotos.jsx";
 import StaticPage from "./screens/static/Static.jsx";
 import AddStaticPage from "./screens/static/addStatic.jsx";
-import AddCategory from "./screens/category/AddCAtegory.jsx";
+import AddCategory from "./screens/category/AddCategory.jsx";
 
 
 function App() {
