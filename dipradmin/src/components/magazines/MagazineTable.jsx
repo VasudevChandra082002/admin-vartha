@@ -14,12 +14,12 @@ import {
 } from "antd";
 import {
   getMagazines,
-  deleteMagazine,
-  approveMagazine,
-  getMagazineHistory1ById,
+  deleteMagazine2,
+  approveMagazine2,
+  getMagazineHistoryById,
   // getMagazineBydid,
   // updateMagazine
-} from "../../service/Magazine/MagazineService";
+} from "../../service/Magazine/MagazineService2";
 import {
   EyeOutlined,
   EditOutlined,
@@ -65,7 +65,7 @@ function MagazineTable() {
 
   const handleDelete = async (id) => {
     try {
-      const response = await deleteMagazine(id);
+      const response = await deleteMagazine2(id);
       if (response.success) {
         message.success("Magazine deleted successfully!");
         const updatedMagazines = magazines.filter(
@@ -98,7 +98,7 @@ function MagazineTable() {
 
     setApproving(true);
     try {
-      const response = await approveMagazine(selectedMagazine._id);
+      const response = await approveMagazine2(selectedMagazine._id);
       if (response.success) {
         message.success("Magazine approved successfully!");
         const updatedMagazines = magazines.map((magazine) =>
@@ -134,27 +134,27 @@ function MagazineTable() {
 
   const handleEdit = async (id) => {
     try {
-      const res = await getMagazineHistory1ById(id);
+      const res = await getMagazineHistoryById(id);
       if (res.success && Array.isArray(res.data)) {
         if (res.data.length <= 1) {
-          navigate(`/edit-magazine/${id}`);
+          navigate(`/edit-marchofkarnataka/${id}`);
         } else {
-          navigate(`/magazine1-history/${id}`);
+          navigate(`/magazine2-history/${id}`);
         }
       } else {
-        navigate(`/edit-magazine/${id}`);
+        navigate(`/edit-marchofkarnataka/${id}`);
       }
     } catch (err) {
       message.warning(
         "Error checking magazine history. Redirecting to edit page."
       );
-      navigate(`/edit-magazine/${id}`);
+      navigate(`/edit-marchofkarnataka/${id}`);
     }
   };
 
   const columns = [
     {
-      title: "Thumbnail",
+      title: "Thumbnail march",
       dataIndex: "magazineThumbnail",
       key: "magazineThumbnail",
       render: (text) => (
@@ -188,6 +188,16 @@ function MagazineTable() {
           View PDF
         </a>
       ),
+    },
+    {
+      title: "Published month",
+      dataIndex: "publishedMonth",
+      key: "publishedMonth",
+    },
+    {
+      title: "Published year",
+      dataIndex: "publishedYear",
+      key: "publishedYear",
     },
     {
       title: "Created By",
@@ -315,6 +325,13 @@ function MagazineTable() {
                   {selectedMagazine.status.toUpperCase()}
                 </Tag>
               </Descriptions.Item>
+
+              <Descriptions.Item label="Published month">
+                {selectedMagazine.publishedMonth || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Published year">
+                {selectedMagazine.publishedYear || "N/A"}
+              </Descriptions.Item>
               <Descriptions.Item label="Created By">
                 {selectedMagazine.createdBy?.displayName || "N/A"}
               </Descriptions.Item>
@@ -373,6 +390,13 @@ function MagazineTable() {
               </Descriptions.Item>
               <Descriptions.Item label="Published Date">
                 {new Date(selectedMagazine.createdTime).toLocaleDateString()}
+              </Descriptions.Item>
+              <Descriptions.Item label="Magazine Type">
+                {selectedMagazine.magazineType === "magazine"
+                  ? "Vartha janapada"
+                  : selectedMagazine.magazineType === "magazine2"
+                  ? "March of Karnataka"
+                  : selectedMagazine.magazineType || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Status">
                 <Tag

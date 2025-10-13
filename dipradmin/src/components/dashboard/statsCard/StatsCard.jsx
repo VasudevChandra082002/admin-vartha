@@ -70,7 +70,7 @@ function StatsCard() {
       icon: <BookOutlined style={{ fontSize: "36px", color: "#faad14" }} />,
       content: stats.totalMagazines,
       onclick: () => {
-        navigate("/manage-magazines1");
+        navigate("/manage-varthajanapada");
       }
     },
     {

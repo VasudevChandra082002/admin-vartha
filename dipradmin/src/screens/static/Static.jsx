@@ -1,22 +1,23 @@
 
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
-import { CategoryWrapper } from "../category/categoryPage.style";
-import CategoryTable from "./CategoryTable";
+import { StaticWrapper } from "../../screens/static/static.style";
+import StaticTable from "../../components/static/statictable";
+// import PhotosTable from "../../components/photos/photostable";
+// import BannersTable from "../../components/banners/BannersTable";
 
-function CategoryPage() {
+function StaticPage() {
   const navigate = useNavigate();
 
   const handleAddBannerClick = () => {
-    navigate("/category/add"); // Navigate to the new banner creation page
+    navigate("/website-pages/addpages"); // Navigate to the new banner creation page
   };
 
   return (
-    <CategoryWrapper>
+    <StaticWrapper>
       <div className="header-section">
-        <div className="block-title">Category</div>
+        <div className="block-title">Websites</div>
 
         <Button
           type="primary"
@@ -24,16 +25,16 @@ function CategoryPage() {
           className="add-article-btn"
           onClick={handleAddBannerClick}
         >
-          Add Category
+          Add Websites
         </Button>
       </div>
 
       {/* Banners Table */}
       <div className="block-Table">
-        <CategoryTable />
+        <StaticTable />
       </div>
-    </CategoryWrapper>
+    </StaticWrapper>
   );
 }
 
-export default CategoryPage;
+export default StaticPage;

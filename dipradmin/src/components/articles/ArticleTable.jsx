@@ -10,7 +10,7 @@ import {
   Input,
   Space,
   Tag,
-  Descriptions
+  Descriptions,
 } from "antd";
 import {
   getArticles,
@@ -67,7 +67,9 @@ function ArticleTable() {
       const response = await deleteArticle(id);
       if (response.success) {
         message.success("Article deleted successfully!");
-        const updatedArticles = articles.filter((article) => article._id !== id);
+        const updatedArticles = articles.filter(
+          (article) => article._id !== id
+        );
         setArticles(updatedArticles);
         setFilteredArticles(updatedArticles);
       } else {
@@ -140,7 +142,9 @@ function ArticleTable() {
         navigate(`/edit-Article/${id}`);
       }
     } catch (err) {
-      message.warning("Error checking article history. Redirecting to edit page.");
+      message.warning(
+        "Error checking article history. Redirecting to edit page."
+      );
       navigate(`/edit-Article/${id}`);
     }
   };
@@ -164,6 +168,40 @@ function ArticleTable() {
       key: "category",
     },
     {
+      title: "Magazine types",
+      dataIndex: "magazineType",
+      key: "magazineType",
+      render: (text) => {
+        if (text === "magazine") {
+          return "Vartha janapada";
+        } else if (text === "magazine2") {
+          return "March of Karnataka";
+        }
+        return text || "N/A";
+      },
+    },
+    {
+      title: "News type",
+      dataIndex: "newsType",
+      key: "newsType",
+      render: (text) => {
+        if (text === "specialnews") {
+          return "Special news";
+        } else if (text === "statenews") {
+          return "State news";
+        } else if (text === "districtnews") {
+          return "District news";
+        }
+        return text || "N/A";
+      },
+    },
+    // {
+    //   title: "Description",
+    //   dataIndex: "description",
+    //   key: "description",
+    //   ellipsis: true,
+    // },
+    {
       title: "Author",
       dataIndex: "author",
       key: "author",
@@ -174,16 +212,16 @@ function ArticleTable() {
       key: "publishedAt",
       render: (text) => new Date(text).toLocaleDateString(),
     },
-    {
-      title: "Likes",
-      dataIndex: "total_Likes",
-      key: "total_Likes",
-    },
-    {
-      title: "Views",
-      dataIndex: "views",
-      key: "views",
-    },
+    // {
+    //   title: "Likes",
+    //   dataIndex: "total_Likes",
+    //   key: "total_Likes",
+    // },
+    // {
+    //   title: "Views",
+    //   dataIndex: "views",
+    //   key: "views",
+    // },
     {
       title: "Created By",
       dataIndex: "createdBy",
@@ -199,7 +237,10 @@ function ArticleTable() {
           <Tag
             color={status === "approved" ? "green" : "orange"}
             style={{
-              cursor: userRole === "admin" && status === "pending" ? "pointer" : "default",
+              cursor:
+                userRole === "admin" && status === "pending"
+                  ? "pointer"
+                  : "default",
             }}
             onClick={(e) => handleStatusClick(record, e)}
           >
@@ -233,7 +274,9 @@ function ArticleTable() {
             <Button danger icon={<DeleteOutlined />} />
           </Popconfirm> */}
 
-          {(userRole === "admin" || (userRole === "moderator" && record.createdBy?._id === localStorage.getItem("userId"))) && (
+          {(userRole === "admin" ||
+            (userRole === "moderator" &&
+              record.createdBy?._id === localStorage.getItem("userId"))) && (
             <Popconfirm
               title="Are you sure to delete this article?"
               onConfirm={() => handleDelete(record._id)}
@@ -250,7 +293,9 @@ function ArticleTable() {
 
   return (
     <>
-      <Space style={{ display: "flex", justifyContent: "right", marginBottom: 16 }}>
+      <Space
+        style={{ display: "flex", justifyContent: "right", marginBottom: 16 }}
+      >
         <Input
           placeholder="Search by Title"
           value={searchText}
@@ -270,133 +315,159 @@ function ArticleTable() {
       />
 
       {/* Article View Modal */}
-    <Modal
-  title="Article Details"
-  visible={isModalVisible}
-  onCancel={() => setIsModalVisible(false)}
-  footer={null}
-  width={800}
->
-  {selectedArticle && (
-    <>
-      <Image
-        width="100%"
-        height={300}
-        src={selectedArticle.newsImage}
-        alt="Article Image"
-        style={{ marginBottom: 20 }}
-      />
+      <Modal
+        title="Article Details"
+        visible={isModalVisible}
+        onCancel={() => setIsModalVisible(false)}
+        footer={null}
+        width={800}
+      >
+        {selectedArticle && (
+          <>
+            <Image
+              width="100%"
+              height={300}
+              src={selectedArticle.newsImage}
+              alt="Article Image"
+              style={{ marginBottom: 20 }}
+            />
 
-      <Descriptions bordered column={1} size="middle">
-        <Descriptions.Item label="Title">
-          {selectedArticle.title}
-        </Descriptions.Item>
-        <Descriptions.Item label="Category">
-          {selectedArticle.category?.name || "N/A"}
-        </Descriptions.Item>
-        <Descriptions.Item label="Author">
-          {selectedArticle.author || "N/A"}
-        </Descriptions.Item>
-        <Descriptions.Item label="Published Date">
-          {new Date(selectedArticle.publishedAt).toLocaleDateString()}
-        </Descriptions.Item>
-        <Descriptions.Item label="Likes & Views">
-          👍 {selectedArticle.total_Likes || 0} &nbsp;&nbsp;&nbsp; 👀 {selectedArticle.views || 0}
-        </Descriptions.Item>
-        <Descriptions.Item label="Status">
-          <Tag
-            color={selectedArticle.status === "approved" ? "green" : "orange"}
-          >
-            {selectedArticle.status.toUpperCase()}
-          </Tag>
-        </Descriptions.Item>
-        <Descriptions.Item label="Created By">
-          {selectedArticle.createdBy?.displayName || "N/A"}
-        </Descriptions.Item>
-        <Descriptions.Item label="Main Description">
-          {selectedArticle.description || "N/A"}
-        </Descriptions.Item>
+            <Descriptions bordered column={1} size="middle">
+              <Descriptions.Item label="Title">
+                {selectedArticle.title}
+              </Descriptions.Item>
+              <Descriptions.Item label="Category">
+                {selectedArticle.category?.name || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Author">
+                {selectedArticle.author || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Magazine Type">
+                {selectedArticle.magazineType === "magazine"
+                  ? "Vartha janapada"
+                  : selectedArticle.magazineType === "magazine2"
+                  ? "March of Karnataka"
+                  : selectedArticle.magazineType || "N/A"}
+              </Descriptions.Item>
 
-        <Descriptions.Item label="Kannada Description">
-          {selectedArticle.kannada?.description || "N/A"}
-        </Descriptions.Item>
-        <Descriptions.Item label="Hindi Description">
-          {selectedArticle.hindi?.description || "N/A"}
-        </Descriptions.Item>
-        <Descriptions.Item label="English Description">
-          {selectedArticle.English?.description || "N/A"}
-        </Descriptions.Item>
-      </Descriptions>
-    </>
-  )}
-</Modal>
+            <Descriptions.Item label="News Type">
+                            {selectedArticle.newsType === "specialnews"
+                              ? "Special news"
+                              : selectedArticle.newsType === "statenews"
+                              ? "State news"
+                              : selectedArticle.newsType === "districtnews"
+                              ? "District news"
+                              : selectedArticle.newsType || "N/A"}
+                          </Descriptions.Item>
+              <Descriptions.Item label="Published Date">
+                {new Date(selectedArticle.publishedAt).toLocaleDateString()}
+              </Descriptions.Item>
+              {/* <Descriptions.Item label="Likes & Views">
+                👍 {selectedArticle.total_Likes || 0} &nbsp;&nbsp;&nbsp; 👀{" "}
+                {selectedArticle.views || 0}
+              </Descriptions.Item> */}
+              <Descriptions.Item label="Status">
+                <Tag
+                  color={
+                    selectedArticle.status === "approved" ? "green" : "orange"
+                  }
+                >
+                  {selectedArticle.status.toUpperCase()}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Created By">
+                {selectedArticle.createdBy?.displayName || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Main Description">
+                {selectedArticle.description || "N/A"}
+              </Descriptions.Item>
 
+              <Descriptions.Item label="Kannada Description">
+                {selectedArticle.kannada?.description || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Hindi Description">
+                {selectedArticle.hindi?.description || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="English Description">
+                {selectedArticle.English?.description || "N/A"}
+              </Descriptions.Item>
+            </Descriptions>
+          </>
+        )}
+      </Modal>
 
       {/* Approval Modal */}
-     <Modal
-  title="Approve Article"
-  visible={isApprovalModalVisible}
-  onOk={handleApprove}
-  onCancel={() => setIsApprovalModalVisible(false)}
-  confirmLoading={approving}
-  width={700}
-  okText="Approve"
-  cancelText="Cancel"
->
-  {selectedArticle && (
-    <>
-      <Image
-        width="100%"
-        height={300}
-        src={selectedArticle.newsImage}
-        alt="Article Image"
-        style={{ marginBottom: 20 }}
-      />
+      <Modal
+        title="Approve Article"
+        visible={isApprovalModalVisible}
+        onOk={handleApprove}
+        onCancel={() => setIsApprovalModalVisible(false)}
+        confirmLoading={approving}
+        width={700}
+        okText="Approve"
+        cancelText="Cancel"
+      >
+        {selectedArticle && (
+          <>
+            <Image
+              width="100%"
+              height={300}
+              src={selectedArticle.newsImage}
+              alt="Article Image"
+              style={{ marginBottom: 20 }}
+            />
 
-      <Descriptions bordered column={1} size="middle">
-        <Descriptions.Item label="Title">
-          {selectedArticle.title}
-        </Descriptions.Item>
-        <Descriptions.Item label="Category">
-          {selectedArticle.category?.name || "N/A"}
-        </Descriptions.Item>
-        <Descriptions.Item label="Author">
-          {selectedArticle.author || "N/A"}
-        </Descriptions.Item>
-        <Descriptions.Item label="Published Date">
-          {new Date(selectedArticle.publishedAt).toLocaleDateString()}
-        </Descriptions.Item>
-        {/* <Descriptions.Item label="Likes & Views">
+            <Descriptions bordered column={1} size="middle">
+              <Descriptions.Item label="Title">
+                {selectedArticle.title}
+              </Descriptions.Item>
+              <Descriptions.Item label="Magazine type">
+                {selectedArticle.magazineType}
+              </Descriptions.Item>
+              <Descriptions.Item label="News type">
+                {selectedArticle.newsType}
+              </Descriptions.Item>
+              <Descriptions.Item label="Category">
+                {selectedArticle.category?.name || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Author">
+                {selectedArticle.author || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Published Date">
+                {new Date(selectedArticle.publishedAt).toLocaleDateString()}
+              </Descriptions.Item>
+              {/* <Descriptions.Item label="Likes & Views">
           👍 {selectedArticle.total_Likes || 0} &nbsp;&nbsp;&nbsp; 👀 {selectedArticle.views || 0}
         </Descriptions.Item> */}
-        <Descriptions.Item label="Status">
-          <Tag
-            color={selectedArticle.status === "approved" ? "green" : "orange"}
-          >
-            {selectedArticle.status.toUpperCase()}
-          </Tag>
-        </Descriptions.Item>
-        <Descriptions.Item label="Created By">
-          {selectedArticle.createdBy?.displayName || "N/A"}
-        </Descriptions.Item>
-        <Descriptions.Item label="Main Description">
-          {selectedArticle.description || "N/A"}
-        </Descriptions.Item>
+              <Descriptions.Item label="Status">
+                <Tag
+                  color={
+                    selectedArticle.status === "approved" ? "green" : "orange"
+                  }
+                >
+                  {selectedArticle.status.toUpperCase()}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Created By">
+                {selectedArticle.createdBy?.displayName || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Main Description">
+                {selectedArticle.description || "N/A"}
+              </Descriptions.Item>
 
-        <Descriptions.Item label="Kannada Description">
-          {selectedArticle.kannada?.description || "N/A"}
-        </Descriptions.Item>
-        <Descriptions.Item label="Hindi Description">
-          {selectedArticle.hindi?.description || "N/A"}
-        </Descriptions.Item>
-        <Descriptions.Item label="English Description">
-          {selectedArticle.English?.description || "N/A"}
-        </Descriptions.Item>
-      </Descriptions>
-    </>
-  )}
-</Modal>
-
+              <Descriptions.Item label="Kannada Description">
+                {selectedArticle.kannada?.description || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Hindi Description">
+                {selectedArticle.hindi?.description || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="English Description">
+                {selectedArticle.English?.description || "N/A"}
+              </Descriptions.Item>
+            </Descriptions>
+          </>
+        )}
+      </Modal>
     </>
   );
 }

@@ -307,7 +307,7 @@ function UsersTable() {
           ...user,
         }))}
         loading={loading}
-        pagination={{ pageSize: 5 }}
+        pagination={{ pageSize: 10 }}
       />
 
       {/* Create Moderator Modal */}

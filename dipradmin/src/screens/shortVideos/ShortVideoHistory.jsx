@@ -41,6 +41,7 @@ function ShortVideoHistoryPage() {
     setLoading(true);
     try {
       const response = await getHistoryOfShortVideosById(videoId);
+      console.log("Video history response", response);
       if (response.success) {
         const sorted = [...response.data].sort(
           (a, b) => b.versionNumber - a.versionNumber

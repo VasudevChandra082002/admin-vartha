@@ -77,7 +77,7 @@ function MagazineHistoryPage2() {
   };
 
   const handleEditClick = (version) => {
-    navigate(`/edit-magazine2/${magazineId}?version=${version.versionNumber}`);
+    navigate(`/edit-marchofkarnataka/${magazineId}?version=${version.versionNumber}`);
   };
 
   const versionDataToTable = (snapshot) => {

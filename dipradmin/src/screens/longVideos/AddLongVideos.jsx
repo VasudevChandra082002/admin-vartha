@@ -8,13 +8,16 @@ import {
   Upload,
   Card,
   Select,
+  Radio,
+  Space,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
-import { createVideo } from "../../service/LongVideo/LongVideoService"; // Import the createVideo function
+import { createVideo } from "../../service/LongVideo/LongVideoService";
 import { useNavigate } from "react-router-dom";
-import { storage } from "../../service/firebaseConfig"; // Import Firebase storage
+import { storage } from "../../service/firebaseConfig";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { getCategories } from "../../service/categories/CategoriesApi"; // Import Category service
+import { getCategories } from "../../service/categories/CategoriesApi";
+import { uploadFileToAzureStorage } from "../../config/azurestorageservice";
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -29,7 +32,9 @@ function AddLongVideos() {
   const [videoUrl, setVideoUrl] = useState("");
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedTopic, setSelectedTopic] = useState(null); // For topics selection
+  const [selectedTopic, setSelectedTopic] = useState(null);
+  const [magazineType, setMagazineType] = useState(null);
+  const [newsType, setNewsType] = useState(null);
 
   useEffect(() => {
     fetchCategories();
@@ -61,10 +66,12 @@ function AddLongVideos() {
 
       const payload = {
         ...values,
-        video_url: videoUrl, // Firebase Video URL
-        thumbnail: imageUrl, // Firebase Thumbnail URL
-        category: selectedCategory, // Pass category _id
-        topics: selectedTopic, // Pass topics _id
+        video_url: videoUrl,
+        thumbnail: imageUrl,
+        category: selectedCategory,
+        topics: selectedTopic,
+        magazineType: magazineType, // Add magazineType to payload
+        newsType: newsType, // Add newsType to payload
       };
 
       const response = await createVideo(payload);
@@ -74,7 +81,9 @@ function AddLongVideos() {
         setImageUrl("");
         setVideoUrl("");
         setSelectedCategory(null);
-        setSelectedTopic(null); // Reset topic selection
+        setSelectedTopic(null);
+        setMagazineType(null); // Reset magazineType
+        setNewsType(null); // Reset newsType
         navigate("/manage-LongVideo");
       } else {
         message.error("Failed to add video.");
@@ -87,46 +96,61 @@ function AddLongVideos() {
   };
 
   const handleImageUpload = async ({ file }) => {
-    setImageUploading(true);
-    const storageRef = ref(storage, `thumbnails/${file.name}`);
-    const uploadTask = uploadBytesResumable(storageRef, file);
+  if (!file.type.startsWith("image/")) {
+    message.error("Only image files are allowed for thumbnail!");
+    return false;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    message.error("Thumbnail must be smaller than 5MB!");
+    return false;
+  }
 
-    uploadTask.on(
-      "state_changed",
-      (snapshot) => {},
-      (error) => {
-        message.error("Thumbnail upload failed!");
-        setImageUploading(false);
-      },
-      async () => {
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-        setImageUrl(downloadURL);
-        message.success("Thumbnail uploaded successfully!");
-        setImageUploading(false);
-      }
-    );
-  };
+  setImageUploading(true);
+  try {
+    const response = await uploadFileToAzureStorage(file, "longvideoimage"); // ✅ container: longvideoimage
+    if (response?.blobUrl) {
+      setImageUrl(response.blobUrl);
+      message.success("Thumbnail uploaded successfully!");
+    } else {
+      message.error("Failed to upload thumbnail.");
+    }
+  } catch (error) {
+    console.error("Thumbnail upload error:", error);
+    message.error("Error uploading thumbnail to Azure.");
+  } finally {
+    setImageUploading(false);
+  }
+  return false; // Prevent Ant Design auto-upload
+};
 
-  const handleVideoUpload = async ({ file }) => {
-    setVideoUploading(true);
-    const storageRef = ref(storage, `videos/${file.name}`);
-    const uploadTask = uploadBytesResumable(storageRef, file);
+const handleVideoUpload = async ({ file }) => {
+  if (!file.type.startsWith("video/")) {
+    message.error("Only video files are allowed!");
+    return false;
+  }
+  // Optional: enforce size limit (e.g., 500MB for long videos)
+  if (file.size > 500 * 1024 * 1024) {
+    message.error("Video must be smaller than 500MB!");
+    return false;
+  }
 
-    uploadTask.on(
-      "state_changed",
-      (snapshot) => {},
-      (error) => {
-        message.error("Video upload failed!");
-        setVideoUploading(false);
-      },
-      async () => {
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-        setVideoUrl(downloadURL);
-        message.success("Video uploaded successfully!");
-        setVideoUploading(false);
-      }
-    );
-  };
+  setVideoUploading(true);
+  try {
+    const response = await uploadFileToAzureStorage(file, "longvideos"); // ✅ container: longvideos
+    if (response?.blobUrl) {
+      setVideoUrl(response.blobUrl);
+      message.success("Video uploaded successfully!");
+    } else {
+      message.error("Failed to upload video.");
+    }
+  } catch (error) {
+    console.error("Video upload error:", error);
+    message.error("Error uploading video to Azure.");
+  } finally {
+    setVideoUploading(false);
+  }
+  return false; // Prevent Ant Design auto-upload
+};
 
   return (
     <div>
@@ -219,7 +243,7 @@ function AddLongVideos() {
               </Select>
             </Form.Item>
 
-            <Form.Item
+            {/* <Form.Item
               label="Topics"
               name="topics"
               rules={[{ required: true, message: "Topics is required" }]}
@@ -234,6 +258,39 @@ function AddLongVideos() {
                   </Option>
                 ))}
               </Select>
+            </Form.Item> */}
+
+            {/* Magazine Type Radio Buttons */}
+            <Form.Item
+              label="Magazine Type"
+              name="magazineType"
+            >
+              <Radio.Group 
+                onChange={(e) => setMagazineType(e.target.value)}
+                value={magazineType}
+              >
+                <Space direction="vertical">
+                  <Radio value="magazine">Vartha Janapada</Radio>
+                  <Radio value="magazine2">March of Karnataka</Radio>
+                </Space>
+              </Radio.Group>
+            </Form.Item>
+
+            {/* News Type Radio Buttons */}
+            <Form.Item
+              label="News Type"
+              name="newsType"
+            >
+              <Radio.Group 
+                onChange={(e) => setNewsType(e.target.value)}
+                value={newsType}
+              >
+                <Space direction="vertical">
+                  <Radio value="statenews">State News</Radio>
+                  <Radio value="districtnews">District News</Radio>
+                  <Radio value="specialnews">Special News</Radio>
+                </Space>
+              </Radio.Group>
             </Form.Item>
 
             <Button type="primary" htmlType="submit" block loading={loading}>

@@ -10,7 +10,8 @@ import {
   Input,
   Tag,
   Tooltip,
-  Descriptions
+  Descriptions,
+  Typography,
 } from "antd";
 import {
   EyeOutlined,
@@ -19,8 +20,15 @@ import {
   CheckOutlined,
   EditOutlined,
 } from "@ant-design/icons";
-import { getShortVideos, deleteById, approveVideo, getLongVideoHistoryById } from "../../service/LongVideo/LongVideoService";
-import { useNavigate } from "react-router-dom";
+import {
+  getShortVideos,
+  deleteById,
+  approveVideo,
+  getLongVideoHistoryById,
+} from "../../service/LongVideo/LongVideoService";
+import { data, useNavigate } from "react-router-dom";
+
+const { Title, Text } = Typography;
 
 function LongVideoTable() {
   const [videos, setVideos] = useState([]);
@@ -28,7 +36,6 @@ function LongVideoTable() {
   const [loading, setLoading] = useState(true);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isApprovalModalVisible, setIsApprovalModalVisible] = useState(false);
-  const [currentVideoUrl, setCurrentVideoUrl] = useState("");
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [searchText, setSearchText] = useState("");
   const [approving, setApproving] = useState(false);
@@ -43,7 +50,6 @@ function LongVideoTable() {
     try {
       const response = await getShortVideos();
 
-      // console.log("Video table response", response);
       if (response.success) {
         setVideos(response.data);
         setFilteredVideos(response.data);
@@ -101,14 +107,15 @@ function LongVideoTable() {
     window.open(url, "_blank");
   };
 
-  const handleViewInModal = (url) => {
-    setCurrentVideoUrl(url);
+  // New function to handle viewing video details
+  const handleViewDetails = (video) => {
+    setSelectedVideo(video);
     setIsModalVisible(true);
   };
 
   const handleModalClose = () => {
     setIsModalVisible(false);
-    setCurrentVideoUrl("");
+    setSelectedVideo(null);
   };
 
   const handleSearchChange = (e) => {
@@ -127,28 +134,25 @@ function LongVideoTable() {
     }
   };
 
-  // const handleEdit = (id) => {
-  //   navigate(`/edit-long-video/${id}`);
-  // };
-
-   const handleEdit = async (id) => {
-      try {
-        const res = await getLongVideoHistoryById(id);
-        if (res.success && Array.isArray(res.data)) {
-          if (res.data.length <= 1) {
-            navigate(`/edit-long-video/${id}`);
-          } else {
-            navigate(`/long-video-history/${id}`);
-          }
-        } else {
+  const handleEdit = async (id) => {
+    try {
+      const res = await getLongVideoHistoryById(id);
+      if (res.success && Array.isArray(res.data)) {
+        if (res.data.length <= 1) {
           navigate(`/edit-long-video/${id}`);
+        } else {
+          navigate(`/long-video-history/${id}`);
         }
-      } catch (err) {
-        message.warning("Error checking video history. Redirecting to edit page.");
+      } else {
         navigate(`/edit-long-video/${id}`);
       }
-    };
-  
+    } catch (err) {
+      message.warning(
+        "Error checking video history. Redirecting to edit page."
+      );
+      navigate(`/edit-long-video/${id}`);
+    }
+  };
 
   const columns = [
     {
@@ -161,22 +165,59 @@ function LongVideoTable() {
       title: "Title",
       dataIndex: "title",
       key: "title",
+      render: (text) => text || "No title",
     },
     {
       title: "Description",
       dataIndex: "description",
       key: "description",
+      render: (text) => text || "No description",
     },
     {
-      title: "Likes",
-      dataIndex: "total_Likes",
-      key: "total_Likes",
+      title: "Magazine types",
+      dataIndex: "magazineType",
+      key: "magazineType",
+      render: (text) => {
+        if (text === "magazine") {
+          return "Vartha janapada";
+        } else if (text === "magazine2") {
+          return "March of Karnataka";
+        }
+        return text || "N/A";
+      },
     },
-     {
+    {
+      title: "News type",
+      dataIndex: "newsType",
+      key: "newsType",
+      render: (text) => {
+        if (text === "specialnews") {
+          return "Special news";
+        } else if (text === "statenews") {
+          return "State news";
+        } else if (text === "districtnews") {
+          return "District news";
+        }
+        return text || "N/A";
+      },
+    },
+    // {
+    //   title: "Total Likes",
+    //   dataIndex: "total_Likes",
+    //   key: "total_Likes",
+    //   render: (text) => text || 0,
+    // },
+    // {
+    //   title: "Total Views",
+    //   dataIndex: "Total_views",
+    //   key: "Total_views",
+    //   render: (text) => text || 0,
+    // },
+    {
       title: "Created By",
       dataIndex: "createdBy",
       key: "createdBy",
-      render: (_, record) => record.createdBy?.displayName
+      render: (_, record) => record.createdBy?.displayName || "N/A",
     },
     {
       title: "Status",
@@ -205,34 +246,35 @@ function LongVideoTable() {
       key: "actions",
       render: (_, record) => (
         <Space>
-          <Tooltip title="View in Modal">
-            <Button
-              icon={<EyeOutlined />}
-              onClick={() => handleViewInModal(record.video_url)}
-            >View </Button>
-          </Tooltip>
-          <Tooltip title="View in New Tab">
-            <Button
-              icon={<EyeOutlined />}
-              onClick={() => handleViewInNewTab(record.video_url)}
-            />
-          </Tooltip>
+          <Button
+            type="default"
+            icon={<EyeOutlined />}
+            onClick={() => handleViewDetails(record)}
+            style={{ marginRight: 8 }}
+          >
+            View
+          </Button>
+
           <Tooltip title="Edit">
             <Button
+              type="default"
               icon={<EditOutlined />}
               onClick={() => handleEdit(record._id)}
             />
           </Tooltip>
-          {(userRole === "admin" || (userRole === "moderator" && record.createdBy?._id === localStorage.getItem("userId"))) && (
-                         <Popconfirm
-                           title="Are you sure to delete this banner?"
-                           onConfirm={() => handleDelete(record._id)}
-                           okText="Yes"
-                           cancelText="No"
-                         >
-                           <Button danger icon={<DeleteOutlined />} />
-                         </Popconfirm>
-                       )}
+
+          {(userRole === "admin" ||
+            (userRole === "moderator" &&
+              record.createdBy?._id === localStorage.getItem("userId"))) && (
+            <Popconfirm
+              title="Are you sure to delete this video?"
+              onConfirm={() => handleDelete(record._id)}
+              okText="Yes"
+              cancelText="No"
+            >
+              <Button danger icon={<DeleteOutlined />} />
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -240,7 +282,13 @@ function LongVideoTable() {
 
   return (
     <div>
-      <div style={{ marginBottom: 16, display: "flex", justifyContent: "flex-end" }}>
+      <div
+        style={{
+          marginBottom: 16,
+          display: "flex",
+          justifyContent: "flex-end",
+        }}
+      >
         <Input
           placeholder="Search by Title"
           value={searchText}
@@ -259,64 +307,165 @@ function LongVideoTable() {
         pagination={{ pageSize: 10 }}
       />
 
+      {/* Video Details Modal - Updated to match ShortVideosTable design */}
       <Modal
-        title="Video Preview"
+        title="Video Details"
         open={isModalVisible}
         onCancel={handleModalClose}
         footer={null}
         width={800}
       >
-        <video width="100%" controls>
-          <source src={currentVideoUrl} type="video/mp4" />
-        </video>
+        {selectedVideo && (
+          <>
+            {/* Video Player */}
+            <div style={{ marginBottom: 20 }}>
+              <video width="100%" controls style={{ marginBottom: 10 }}>
+                <source src={selectedVideo.video_url} type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
+
+            {/* Thumbnail */}
+            <Image
+              width="100%"
+              height={200}
+              src={selectedVideo.thumbnail}
+              alt="Video Thumbnail"
+              style={{
+                marginBottom: 20,
+                objectFit: "cover",
+              }}
+            />
+
+            <Descriptions bordered column={1} size="middle">
+              <Descriptions.Item label="Title">
+                {selectedVideo.title || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Description">
+                {selectedVideo.description || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Magazine Type">
+                {selectedVideo.magazineType === "magazine"
+                  ? "Vartha janapada"
+                  : selectedVideo.magazineType === "magazine2"
+                  ? "March of Karnataka"
+                  : selectedVideo.magazineType || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="News Type">
+                {selectedVideo.newsType === "specialnews"
+                  ? "Special news"
+                  : selectedVideo.newsType === "statenews"
+                  ? "State news"
+                  : selectedVideo.newsType === "districtnews"
+                  ? "District news"
+                  : selectedVideo.newsType || "N/A"}
+              </Descriptions.Item>
+              {/* <Descriptions.Item label="Likes & Views">
+                👍 {selectedVideo.total_Likes || 0} &nbsp;&nbsp;&nbsp; 👀{" "}
+                {selectedVideo.Total_views || 0}
+              </Descriptions.Item> */}
+              <Descriptions.Item label="Status">
+                <Tag
+                  color={
+                    selectedVideo.status === "approved" ? "green" : "orange"
+                  }
+                >
+                  {selectedVideo.status.toUpperCase()}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Created By">
+                {selectedVideo.createdBy?.displayName || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Created At">
+                {selectedVideo.createdAt 
+                  ? new Date(selectedVideo.createdAt).toLocaleDateString()
+                  : "N/A"}
+              </Descriptions.Item>
+
+              {/* Translations - Add these if your long videos have translation fields */}
+              {selectedVideo.kannada && (
+                <>
+                  <Descriptions.Item label="Kannada Title">
+                    {selectedVideo.kannada?.title || "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Kannada Description">
+                    {selectedVideo.kannada?.description || "N/A"}
+                  </Descriptions.Item>
+                </>
+              )}
+              {selectedVideo.hindi && (
+                <>
+                  <Descriptions.Item label="Hindi Title">
+                    {selectedVideo.hindi?.title || "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Hindi Description">
+                    {selectedVideo.hindi?.description || "N/A"}
+                  </Descriptions.Item>
+                </>
+              )}
+              {selectedVideo.english && (
+                <>
+                  <Descriptions.Item label="English Title">
+                    {selectedVideo.english?.title || "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="English Description">
+                    {selectedVideo.english?.description || "N/A"}
+                  </Descriptions.Item>
+                </>
+              )}
+            </Descriptions>
+          </>
+        )}
       </Modal>
 
-    <Modal
-  title="Approve Video"
-  open={isApprovalModalVisible}
-  onOk={handleApprove}
-  onCancel={() => setIsApprovalModalVisible(false)}
-  confirmLoading={approving}
-  okText="Approve"
-  cancelText="Cancel"
-  width={800}
->
-  {selectedVideo && (
-    <Descriptions bordered column={1}>
-      <Descriptions.Item label="Title">
-        {selectedVideo.title || "N/A"}
-      </Descriptions.Item>
-      <Descriptions.Item label="Description">
-        {selectedVideo.description || "N/A"}
-      </Descriptions.Item>
-      <Descriptions.Item label="Created By">
-        {selectedVideo.createdBy?.displayName || "N/A"}
-      </Descriptions.Item>
-      <Descriptions.Item label="Total Likes">
-        {selectedVideo.total_Likes || 0}
-      </Descriptions.Item>
-      <Descriptions.Item label="Status">
-        <Tag color={selectedVideo.status === "approved" ? "green" : "orange"}>
-          {selectedVideo.status.toUpperCase()}
-        </Tag>
-      </Descriptions.Item>
-      <Descriptions.Item label="Thumbnail">
-        <Image
-          width={200}
-          src={selectedVideo.thumbnail}
-          alt="Video Thumbnail"
-        />
-      </Descriptions.Item>
-      <Descriptions.Item label="Preview">
-        <video width="100%" height="240" controls>
-          <source src={selectedVideo.video_url} type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
-      </Descriptions.Item>
-    </Descriptions>
-  )}
-</Modal>
-
+      {/* Approval Modal */}
+      <Modal
+        title="Approve Video"
+        open={isApprovalModalVisible}
+        onOk={handleApprove}
+        onCancel={() => setIsApprovalModalVisible(false)}
+        confirmLoading={approving}
+        okText="Approve"
+        cancelText="Cancel"
+        width={800}
+      >
+        {selectedVideo && (
+          <Descriptions bordered column={1}>
+            <Descriptions.Item label="Title">
+              {selectedVideo.title || "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Description">
+              {selectedVideo.description || "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Created By">
+              {selectedVideo.createdBy?.displayName || "N/A"}
+            </Descriptions.Item>
+            {/* <Descriptions.Item label="Total Likes">
+              {selectedVideo.total_Likes || 0}
+            </Descriptions.Item> */}
+            <Descriptions.Item label="Status">
+              <Tag
+                color={selectedVideo.status === "approved" ? "green" : "orange"}
+              >
+                {selectedVideo.status.toUpperCase()}
+              </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="Thumbnail">
+              <Image
+                width={200}
+                src={selectedVideo.thumbnail}
+                alt="Video Thumbnail"
+              />
+            </Descriptions.Item>
+            <Descriptions.Item label="Preview">
+              <video width="100%" height="240" controls>
+                <source src={selectedVideo.video_url} type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </Descriptions.Item>
+          </Descriptions>
+        )}
+      </Modal>
     </div>
   );
 }

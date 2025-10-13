@@ -77,7 +77,7 @@ function MagazineHistoryPage() {
   };
 
   const handleEditClick = (version) => {
-    navigate(`/edit-magazine/${magazineId}?version=${version.versionNumber}`);
+    navigate(`/edit-varthajanapada/${magazineId}?version=${version.versionNumber}`);
   };
 
   const versionDataToTable = (snapshot) => {
