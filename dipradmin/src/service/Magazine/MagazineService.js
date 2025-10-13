@@ -18,7 +18,7 @@ export const getMagazines = async () => {
 
 export const getMagazineBydid1 = async (magazineId) => {
   try {
-    console.log("Api enter")
+    // console.log("Api enter")
     const token = localStorage.getItem("token");
     const response = await fetch(`${BASE_URL}/api/magazine/getMagazineById/${magazineId}`, {
       method: "GET",
@@ -27,7 +27,7 @@ export const getMagazineBydid1 = async (magazineId) => {
         Authorization: `Bearer ${token}`,
       },
     });
-    console.log("Response",response);
+    // console.log("Response",response);
     
     if (!response.ok) {
       // More specific error handling

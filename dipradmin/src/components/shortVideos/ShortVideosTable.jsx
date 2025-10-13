@@ -10,8 +10,9 @@ import {
   Input,
   Tag,
   Descriptions,
+  Typography,
 } from "antd";
-import { EditOutlined } from "@ant-design/icons"; // make sure it's imported
+import { EditOutlined } from "@ant-design/icons";
 
 import {
   EyeOutlined,
@@ -22,10 +23,12 @@ import {
 import {
   getShortVideos,
   deleteById,
-  approveVideo, // You'll need to create this service function
+  approveVideo,
   getHistoryOfShortVideosById,
 } from "../../service/ShortVideos/ShortVideoservice";
-import { useNavigate } from "react-router-dom";
+import { data, useNavigate } from "react-router-dom";
+
+const { Title, Text } = Typography;
 
 function ShortVideosTable() {
   const [videos, setVideos] = useState([]);
@@ -48,8 +51,12 @@ function ShortVideosTable() {
     try {
       const response = await getShortVideos();
       if (response.success) {
-        setVideos(response.data);
-        setFilteredVideos(response.data);
+        // Sort by createdAt in descending order (newest first)
+        const sortedVideos = response.data.sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
+        setVideos(sortedVideos);
+        setFilteredVideos(sortedVideos);
       } else {
         message.error("Failed to load videos");
       }
@@ -97,12 +104,18 @@ function ShortVideosTable() {
     }
   };
 
-  const handleViewInNewTab = (videoUrl) => {
-    window.open(videoUrl, "_blank");
-  };
+  // const handleViewInNewTab = (videoUrl) => {
+  //   window.open(videoUrl, "_blank");
+  // };
 
-  const handleViewInModal = (videoUrl) => {
-    setCurrentVideoUrl(videoUrl);
+  // const handleViewInModal = (videoUrl) => {
+  //   setCurrentVideoUrl(videoUrl);
+  //   setIsModalVisible(true);
+  // };
+
+  // New function to handle viewing video details
+  const handleViewDetails = (video) => {
+    setSelectedVideo(video);
     setIsModalVisible(true);
   };
 
@@ -152,6 +165,7 @@ function ShortVideosTable() {
   const handleModalClose = () => {
     setIsModalVisible(false);
     setCurrentVideoUrl("");
+    setSelectedVideo(null);
   };
 
   const columns = [
@@ -174,15 +188,50 @@ function ShortVideosTable() {
       render: (text) => text || "No description",
     },
     {
+      title: "Magazine types",
+      dataIndex: "magazineType",
+      key: "magazineType",
+      render: (text) => {
+        if (text === "magazine") {
+          return "Vartha janapada";
+        } else if (text === "magazine2") {
+          return "March of Karnataka";
+        }
+        return text || "N/A";
+      },
+    },
+    {
+      title: "News type",
+      dataIndex: "newsType",
+      key: "newsType",
+      render: (text) => {
+        if (text === "specialnews") {
+          return "Special news";
+        } else if (text === "statenews") {
+          return "State news";
+        } else if (text === "districtnews") {
+          return "District news";
+        }
+        return text || "N/A";
+      },
+    },
+    {
       title: "Total Likes",
       dataIndex: "total_Likes",
       key: "total_Likes",
+      render: (text) => text || 0,
+    },
+    {
+      title: "Total Views",
+      dataIndex: "Total_views",
+      key: "Total_views",
+      render: (text) => text || 0,
     },
     {
       title: "Created By",
       dataIndex: "createdBy",
       key: "createdBy",
-      render: (_, record) => record.createdBy?.displayName,
+      render: (_, record) => record.createdBy?.displayName || "N/A",
     },
     {
       title: "Status",
@@ -212,24 +261,15 @@ function ShortVideosTable() {
           <Button
             type="default"
             icon={<EyeOutlined />}
-            onClick={() => handleViewInModal(record.video_url)}
+            onClick={() => handleViewDetails(record)}
             style={{ marginRight: 8 }}
           >
             View
           </Button>
-          <Button
-            type="default"
-            icon={<EyeOutlined />}
-            onClick={() => handleViewInNewTab(record.video_url)}
-          >
-            {/* View in New Tab */}
-          </Button>
 
-          {/* ✅ Edit Icon */}
           <Button
             type="default"
             icon={<EditOutlined />}
-            // onClick={() => navigate(`/short-video-history/${record._id}`)}
             onClick={() => handleEdit(record._id)}
           />
 
@@ -237,7 +277,7 @@ function ShortVideosTable() {
             (userRole === "moderator" &&
               record.createdBy?._id === localStorage.getItem("userId"))) && (
             <Popconfirm
-              title="Are you sure to delete this banner?"
+              title="Are you sure to delete this video?"
               onConfirm={() => handleDelete(record._id)}
               okText="Yes"
               cancelText="No"
@@ -278,18 +318,107 @@ function ShortVideosTable() {
         pagination={{ pageSize: 10 }}
       />
 
-      {/* Video Viewing Modal */}
+      {/* Video Details Modal */}
       <Modal
-        title="Video"
+        title="Video Details"
         visible={isModalVisible}
         onCancel={handleModalClose}
         footer={null}
         width={800}
       >
-        <video width="100%" controls>
-          <source src={currentVideoUrl} type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
+        {selectedVideo && (
+          <>
+            {/* Video Player */}
+            <div style={{ marginBottom: 20 }}>
+              <video width="100%" controls style={{ marginBottom: 10 }}>
+                <source src={selectedVideo.video_url} type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
+
+            {/* Thumbnail */}
+            <Image
+              width="100%"
+              height={200}
+              src={selectedVideo.thumbnail}
+              alt="Video Thumbnail"
+              style={{
+                marginBottom: 20,
+                objectFit: "cover",
+              }}
+            />
+
+            <Descriptions bordered column={1} size="middle">
+              <Descriptions.Item label="Title">
+                {selectedVideo.title || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Description">
+                {selectedVideo.description || "N/A"}
+              </Descriptions.Item>
+              {/* <Descriptions.Item label="Category">
+                {selectedVideo.category?.name || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Topics">
+                {selectedVideo.topics?.name || "N/A"}
+              </Descriptions.Item> */}
+              <Descriptions.Item label="Magazine Type">
+                {selectedVideo.magazineType === "magazine"
+                  ? "Vartha janapada"
+                  : selectedVideo.magazineType === "magazine2"
+                  ? "March of Karnataka"
+                  : selectedVideo.magazineType || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="News Type">
+                {selectedVideo.newsType === "specialnews"
+                  ? "Special news"
+                  : selectedVideo.newsType === "statenews"
+                  ? "State news"
+                  : selectedVideo.newsType === "districtnews"
+                  ? "District news"
+                  : selectedVideo.newsType || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Likes & Views">
+                👍 {selectedVideo.total_Likes || 0} &nbsp;&nbsp;&nbsp; 👀{" "}
+                {selectedVideo.Total_views || 0}
+              </Descriptions.Item>
+              <Descriptions.Item label="Status">
+                <Tag
+                  color={
+                    selectedVideo.status === "approved" ? "green" : "orange"
+                  }
+                >
+                  {selectedVideo.status.toUpperCase()}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Created By">
+                {selectedVideo.createdBy?.displayName || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Created At">
+                {new Date(selectedVideo.createdAt).toLocaleDateString()}
+              </Descriptions.Item>
+
+              {/* Translations */}
+              <Descriptions.Item label="Kannada Title">
+                {selectedVideo.kannada?.title || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Kannada Description">
+                {selectedVideo.kannada?.description || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Hindi Title">
+                {selectedVideo.hindi?.title || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Hindi Description">
+                {selectedVideo.hindi?.description || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="English Title">
+                {selectedVideo.english?.title || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="English Description">
+                {selectedVideo.english?.description || "N/A"}
+              </Descriptions.Item>
+            </Descriptions>
+          </>
+        )}
       </Modal>
 
       {/* Approval Modal */}
@@ -311,6 +440,13 @@ function ShortVideosTable() {
               </Descriptions.Item>
               <Descriptions.Item label="Description">
                 {selectedVideo.description || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Magazine Type">
+                {selectedVideo.magazineType === "magazine"
+                  ? "Vartha janapada"
+                  : selectedVideo.magazineType === "magazine2"
+                  ? "March of Karnataka"
+                  : selectedVideo.magazineType || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Created By">
                 {selectedVideo.createdBy?.displayName || "N/A"}

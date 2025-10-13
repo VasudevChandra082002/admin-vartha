@@ -42,6 +42,12 @@ import EditLongVideos from "./screens/longVideos/EditLongVideos.jsx";
 import LongVideoHistoryPage from "./screens/longVideos/LongVideoHistory.jsx";
 import AddBannerPage from "./screens/banners/AddBanner.jsx";
 import EditBannerPage from "./screens/banners/EditBanner.jsx";
+import PhtotosPage from "./screens/photos/Photos.jsx";
+import AddPhotos from "./screens/photos/Addphotos.jsx";
+import StaticPage from "./screens/static/Static.jsx";
+import AddStaticPage from "./screens/static/addStatic.jsx";
+import AddCategory from "./screens/category/AddCAtegory.jsx";
+
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -51,8 +57,8 @@ function App() {
     // Get the role from localStorage instead of cookies
     const storedRole = localStorage.getItem("role");
     const token = localStorage.getItem("token");
-    console.log("Token from localStorage:", token);
-    console.log("Stored Role from localStorage:", storedRole);
+    // console.log("Token from localStorage:", token);
+    // console.log("Stored Role from localStorage:", storedRole);
     if (storedRole && token) {
       setRole(storedRole);
       setIsAuthenticated(true);
@@ -62,7 +68,7 @@ function App() {
   const handleLogin = () => {
     setIsAuthenticated(true);
     const storedRole = localStorage.getItem("role");
-    console.log("Role after login:", storedRole);
+    // console.log("Role after login:", storedRole);
     setRole(storedRole);
   };
 
@@ -126,16 +132,20 @@ function App() {
                 </PrivateRoute>
               }
             />
+
+            {/* March of karnartaka */}
             <Route
-              path="/manage-magazines1"
+              path="/manage-marchofkarnataka"
               element={
                 <PrivateRoute>
                   <MagazinesPage />
                 </PrivateRoute>
               }
             />
+
+            {/* Vartha janapada */}
             <Route
-              path="/manage-magazines2"
+              path="/manage-varthajanapada"
               element={
                 <PrivateRoute>
                   <MagazinesPage2 />
@@ -170,7 +180,7 @@ function App() {
             />
 
             <Route
-              path="/add-magazine"
+              path="/add-varthajanapada"
               element={
                 <PrivateRoute>
                   <AddMagazinePage />
@@ -238,8 +248,11 @@ function App() {
             <Route
               path="/long-video-history/:videoId"
               element={
-                <PrivateRoute> <LongVideoHistoryPage /></PrivateRoute>
-             }
+                <PrivateRoute>
+                  {" "}
+                  <LongVideoHistoryPage />
+                </PrivateRoute>
+              }
             />
 
             <Route
@@ -260,7 +273,11 @@ function App() {
             />
             <Route
               path="/short-video-history/:videoId"
-              element={<PrivateRoute><ShortVideoHistoryPage /></PrivateRoute>}
+              element={
+                <PrivateRoute>
+                  <ShortVideoHistoryPage />
+                </PrivateRoute>
+              }
             />
 
             <Route
@@ -290,7 +307,7 @@ function App() {
             />
 
             <Route
-              path="/edit-magazine/:magazineId"
+              path="/edit-varthajanapada/:magazineId"
               element={
                 <PrivateRoute>
                   <UpdateMagazinePage1 />
@@ -298,14 +315,35 @@ function App() {
               }
             />
             <Route
-              path="/magazine1-history/:magazineId"
-              element={<PrivateRoute><MagazineHistoryPage /></PrivateRoute>}
+              path="/varthajanapada-history/:magazineId"
+              element={
+                <PrivateRoute>
+                  <MagazineHistoryPage />
+                </PrivateRoute>
+              }
             />
             <Route
-              path="/edit-magazine2/:magazineId"
+              path="/edit-marchofkarnataka/:magazineId"
               element={
                 <PrivateRoute>
                   <UpdateMagazinePage2 />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/manage-photos"
+              element={
+                <PrivateRoute>
+                  <PhtotosPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/manage-photos/addphotos"
+              element={
+                <PrivateRoute>
+                  <AddPhotos />
                 </PrivateRoute>
               }
             />
@@ -314,6 +352,41 @@ function App() {
               element={
                 <PrivateRoute>
                   <MagazineHistoryPage2 />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/website-pages"
+              element={
+                <PrivateRoute>
+                  <StaticPage />
+                </PrivateRoute>
+              }
+            />
+             <Route
+              path="/website-pages/addpages"
+              element={
+                <PrivateRoute>
+                  <AddStaticPage />
+                </PrivateRoute>
+              }
+            />
+
+             <Route
+              path="/category"
+              element={
+                <PrivateRoute>
+                  <CategoryPage />
+                </PrivateRoute>
+              }
+            />
+
+              <Route
+              path="/category/add"
+              element={
+                <PrivateRoute>
+                  <AddCategory/>
                 </PrivateRoute>
               }
             />

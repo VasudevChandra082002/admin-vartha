@@ -39,7 +39,7 @@ function MagazineHistoryPage2() {
   const fetchHistory = async () => {
     try {
       const response = await getMagazineHistoryById(magazineId);
-      console.log("Magazine history response", response);
+      // console.log("Magazine history response", response);
       if (response.success) {
         const sorted = [...response.data].sort((a, b) => b.versionNumber - a.versionNumber);
         setHistory(sorted);
@@ -77,7 +77,7 @@ function MagazineHistoryPage2() {
   };
 
   const handleEditClick = (version) => {
-    navigate(`/edit-magazine2/${magazineId}?version=${version.versionNumber}`);
+    navigate(`/edit-marchofkarnataka/${magazineId}?version=${version.versionNumber}`);
   };
 
   const versionDataToTable = (snapshot) => {

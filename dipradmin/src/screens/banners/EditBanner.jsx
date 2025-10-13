@@ -14,6 +14,7 @@ import { storage } from "../../service/firebaseConfig";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { getBannerById, updateBannerById } from "../../service/Banner/BannersService";
 import { useNavigate, useParams } from "react-router-dom";
+import { uploadFileToAzureStorage } from "../../config/azurestorageservice";
 
 const { TextArea } = Input;
 const { Title } = Typography;
@@ -57,28 +58,37 @@ function EditBannerPage() {
     }
   };
 
-  const handleUpload = async ({ file }) => {
-    setImageUploading(true);
-    const storageRef = ref(storage, `banners/${file.name}`);
-    const uploadTask = uploadBytesResumable(storageRef, file);
+ const handleUpload = async ({ file }) => {
+  // basic validation
+  if (!file.type?.startsWith("image/")) {
+    message.error("Only image files are allowed!");
+    return false;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    message.error("Image must be smaller than 5MB!");
+    return false;
+  }
 
-    uploadTask.on(
-      "state_changed",
-      (snapshot) => {
-        // Progress tracking if needed
-      },
-      (error) => {
-        message.error("Image upload failed!");
-        setImageUploading(false);
-      },
-      async () => {
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-        setImageUrl(downloadURL);
-        message.success("Image uploaded successfully!");
-        setImageUploading(false);
-      }
-    );
-  };
+  setImageUploading(true);
+  try {
+    // upload to Azure container: "banners"
+    const res = await uploadFileToAzureStorage(file, "banners");
+    if (res?.blobUrl) {
+      setImageUrl(res.blobUrl);
+      message.success("Image uploaded successfully!");
+    } else {
+      message.error("Failed to upload image.");
+    }
+  } catch (err) {
+    console.error("Azure upload error:", err);
+    message.error("Error uploading image to Azure.");
+  } finally {
+    setImageUploading(false);
+  }
+
+  return false; // prevent AntD default upload
+};
+
 
   const handleFormSubmit = async (values) => {
     setLoading(true);

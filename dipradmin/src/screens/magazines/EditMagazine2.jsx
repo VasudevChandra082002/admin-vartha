@@ -8,6 +8,7 @@ import {
   Card,
   Spin,
   Image,
+  Select,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import {
@@ -19,8 +20,10 @@ import {
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { storage } from "../../service/firebaseConfig";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { uploadFileToAzureStorage } from "../../config/azurestorageservice";
 
 const { TextArea } = Input;
+const { Option } = Select;
 
 function UpdateMagazinePage2() {
   const { magazineId } = useParams();
@@ -38,6 +41,22 @@ function UpdateMagazinePage2() {
   const [fetching, setFetching] = useState(true);
   const [previousVersion, setPreviousVersion] = useState(null);
 
+  // Month options
+  const monthOptions = [
+    { value: "January", label: "January" },
+    { value: "February", label: "February" },
+    { value: "March", label: "March" },
+    { value: "April", label: "April" },
+    { value: "May", label: "May" },
+    { value: "June", label: "June" },
+    { value: "July", label: "July" },
+    { value: "August", label: "August" },
+    { value: "September", label: "September" },
+    { value: "October", label: "October" },
+    { value: "November", label: "November" },
+    { value: "December", label: "December" },
+  ];
+
   useEffect(() => {
     const fetchMagazine = async () => {
       try {
@@ -50,16 +69,18 @@ function UpdateMagazinePage2() {
             title: magazine.title,
             description: magazine.description,
             editionNumber: magazine.editionNumber,
+            publishedMonth: magazine.publishedMonth,
+            publishedYear: magazine.publishedYear,
           });
           setImageUrl(magazine.magazineThumbnail);
           setPdfUrl(magazine.magazinePdf);
         } else {
           message.error(response.message || "Magazine not found");
-          navigate("/manage-magazines2");
+          navigate("/manage-marchofkarnataka");
         }
       } catch (error) {
         message.error("Error loading magazine data");
-        navigate("/manage-magazines2");
+        navigate("/manage-marchofkarnataka");
       } finally {
         setFetching(false);
       }
@@ -102,13 +123,15 @@ function UpdateMagazinePage2() {
         magazineThumbnail: imageUrl,
         magazinePdf: pdfUrl,
         editionNumber: values.editionNumber,
+        publishedMonth: values.publishedMonth,
+        publishedYear: values.publishedYear.toString(),
       };
 
       const response = await updateMagazine2(magazineId, payload);
 
       if (response.success) {
         message.success("Magazine updated successfully!");
-        navigate("/manage-magazines1");
+        navigate("/manage-marchofkarnataka");
       } else {
         throw new Error(response.message || "Failed to update magazine");
       }
@@ -119,39 +142,65 @@ function UpdateMagazinePage2() {
     }
   };
 
-  const handleImageUpload = async ({ file }) => {
-    setImageUploading(true);
-    try {
-      const storageRef = ref(storage, `magazineThumbnails/${file.name}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
+// ✅ Azure: thumbnail → container "marchofkarnataka-image"
+const handleImageUpload = async ({ file }) => {
+  if (!file.type?.startsWith("image/")) {
+    message.error("Only image files are allowed!");
+    return false;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    message.error("Image must be smaller than 5MB!");
+    return false;
+  }
 
-      await uploadTask;
-      const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-      setImageUrl(downloadURL);
+  setImageUploading(true);
+  try {
+    const res = await uploadFileToAzureStorage(file, "marchofkarnataka-image");
+    if (res?.blobUrl) {
+      setImageUrl(res.blobUrl);
       message.success("Image uploaded successfully!");
-    } catch (error) {
-      message.error("Image upload failed!");
-    } finally {
-      setImageUploading(false);
+    } else {
+      message.error("Failed to upload image.");
     }
-  };
+  } catch (err) {
+    console.error("Azure image upload error:", err);
+    message.error("Error uploading image to Azure.");
+  } finally {
+    setImageUploading(false);
+  }
+  return false; // prevent AntD default upload
+};
 
-  const handlePdfUpload = async ({ file }) => {
-    setPdfUploading(true);
-    try {
-      const storageRef = ref(storage, `magazinePdfs/${file.name}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
+// ✅ Azure: PDF → container "marchofkarnataka-pdf"
+const handlePdfUpload = async ({ file }) => {
+  const isPdf = file.type === "application/pdf" || file.name?.toLowerCase().endsWith(".pdf");
+  if (!isPdf) {
+    message.error("Only PDF files are allowed!");
+    return false;
+  }
+  if (file.size > 100 * 1024 * 1024) {
+    message.error("PDF must be smaller than 100MB!");
+    return false;
+  }
 
-      await uploadTask;
-      const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-      setPdfUrl(downloadURL);
+  setPdfUploading(true);
+  try {
+    const res = await uploadFileToAzureStorage(file, "marchofkarnataka-pdf");
+    if (res?.blobUrl) {
+      setPdfUrl(res.blobUrl);
       message.success("PDF uploaded successfully!");
-    } catch (error) {
-      message.error("PDF upload failed!");
-    } finally {
-      setPdfUploading(false);
+    } else {
+      message.error("Failed to upload PDF.");
     }
-  };
+  } catch (err) {
+    console.error("Azure PDF upload error:", err);
+    message.error("Error uploading PDF to Azure.");
+  } finally {
+    setPdfUploading(false);
+  }
+  return false; // prevent AntD default upload
+};
+
 
   const handleRevert = async () => {
     const currentVer = parseInt(versionNumber);
@@ -164,7 +213,7 @@ function UpdateMagazinePage2() {
       const response = await revertMagazine2ByVersionNumber(magazineId, currentVer);
       if (response.success) {
         message.success(`Reverted to version ${previousVersion}`);
-        navigate("/manage-magazines1");
+        navigate("/manage-marchofkarnataka");
       } else {
         message.error(response.message || "Revert failed");
       }
@@ -185,8 +234,6 @@ function UpdateMagazinePage2() {
   return (
     <div style={{ padding: "20px", maxWidth: "1200px", margin: "0 auto" }}>
       <h1>Update Magazine</h1>
-
-    
 
       <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
         {/* Thumbnail Upload */}
@@ -249,6 +296,38 @@ function UpdateMagazinePage2() {
               <Input placeholder="Edition number" />
             </Form.Item>
 
+            {/* Published Month Field */}
+            <Form.Item
+              name="publishedMonth"
+              label="Published Month"
+              rules={[{ required: true, message: "Please select the published month!" }]}
+            >
+              <Select placeholder="Select month" allowClear>
+                {monthOptions.map(month => (
+                  <Option key={month.value} value={month.value}>
+                    {month.label}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            {/* Published Year Field */}
+            <Form.Item
+              name="publishedYear"
+              label="Published Year"
+              rules={[
+                { required: true, message: "Please input the published year!" },
+                { pattern: /^[0-9]{4}$/, message: "Please enter a valid 4-digit year!" }
+              ]}
+            >
+              <Input 
+                placeholder="Enter year (e.g., 2024)" 
+                type="number"
+                min={1900}
+                max={2100}
+              />
+            </Form.Item>
+
             <Form.Item label="PDF File">
               <Upload
                 customRequest={handlePdfUpload}
@@ -268,15 +347,17 @@ function UpdateMagazinePage2() {
               )}
             </Form.Item>
 
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={loading}
-              block
-              size="large"
-            >
-              Update Magazine
-            </Button>
+          <Button
+  type="primary"
+  htmlType="submit"
+  loading={loading}
+  disabled={imageUploading || pdfUploading}
+  block
+  size="large"
+>
+  Update Magazine
+</Button>
+
           </Form>
         </Card>
       </div>

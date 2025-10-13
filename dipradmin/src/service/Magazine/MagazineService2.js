@@ -18,7 +18,7 @@ export const getMagazines = async () => {
 
 export const getMagazineBydid2 = async (magazineId) => {
   try {
-    console.log("Api enter");
+    // console.log("Api enter");
 
     const token = localStorage.getItem("token");
     const response = await fetch(`${BASE_URL}/api/magazine2/${magazineId}`, {

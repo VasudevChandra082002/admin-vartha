@@ -34,7 +34,7 @@ function BannersTable() {
   const fetchBanners = async () => {
     try {
       const response = await getBanners();
-      console.log("Banner table response get all banners", response);
+      // console.log("Banner table response get all banners", response);
 
       if (response && Array.isArray(response)) {
         setBanners(response);

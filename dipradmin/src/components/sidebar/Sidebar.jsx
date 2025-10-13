@@ -129,7 +129,6 @@
 //   );
 // };
 
-
 import React from "react";
 import { Menu, Button, Modal } from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -212,11 +211,11 @@ const Sidebar = () => {
             <Menu.Item key="/manage-articles" icon={<FileOutlined />}>
               Articles
             </Menu.Item>
-            <Menu.Item key="/manage-magazines1" icon={<BookOutlined />}>
-              March of Karnataka
-            </Menu.Item>
-            <Menu.Item key="/manage-magazines2" icon={<BookOutlined />}>
+            <Menu.Item key="/manage-varthajanapada" icon={<BookOutlined />}>
               Vartha Janapada
+            </Menu.Item>
+            <Menu.Item key="/manage-marchofkarnataka" icon={<BookOutlined />}>
+              March of Karnataka
             </Menu.Item>
             <Menu.Item key="/manage-banners" icon={<BookOutlined />}>
               Banners
@@ -224,15 +223,28 @@ const Sidebar = () => {
             <Menu.Item key="/manage-shortvideos" icon={<VideoCameraOutlined />}>
               Short Videos
             </Menu.Item>
-            <Menu.Item key="/manage-longvideo" icon={<VideoCameraAddOutlined />}>
+            <Menu.Item
+              key="/manage-longvideo"
+              icon={<VideoCameraAddOutlined />}
+            >
               Long Videos
             </Menu.Item>
-            <Menu.Item key="/manage-notifications" icon={<VideoCameraAddOutlined />}>
-              Notifications
+            <Menu.Item key="/manage-photos" icon={<VideoCameraAddOutlined />}>
+              Photos
             </Menu.Item>
+            
+            <Menu.Item key="/website-pages" icon={<VideoCameraAddOutlined />}>
+              Websites
+            </Menu.Item>
+
+            <Menu.Item key="/category" icon={<VideoCameraAddOutlined />}>
+              Category
+            </Menu.Item>
+            {/* <Menu.Item key="/manage-notifications" icon={<VideoCameraAddOutlined />}>
+              Notifications
+            </Menu.Item> */}
           </>
         )}
-
 
         {isAdminOrModerator && (
           <Menu.Item key="/manage-moderation" icon={<VideoCameraAddOutlined />}>

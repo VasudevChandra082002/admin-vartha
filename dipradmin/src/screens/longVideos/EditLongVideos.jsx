@@ -7,18 +7,19 @@ import {
   Card,
   Select,
   message,
+  Radio,
+  Space,
 } from "antd";
-import { UploadOutlined, RollbackOutlined } from "@ant-design/icons";
+import { UploadOutlined } from "@ant-design/icons";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import {
   getVideoById,
   updateLongVideoById,
   revertLongVideoByVersionNumber,
-  getLongVideoHistoryById, // ⬅️ import this function
+  getLongVideoHistoryById,
 } from "../../service/LongVideo/LongVideoService";
 import { getCategories } from "../../service/categories/CategoriesApi";
-import { storage } from "../../service/firebaseConfig";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { uploadFileToAzureStorage } from "../../config/azurestorageservice"; // ✅ Azure uploader
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -41,6 +42,8 @@ function EditLongVideos() {
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [fetchedVideoData, setFetchedVideoData] = useState(null);
   const [previousVersion, setPreviousVersion] = useState(null);
+  const [magazineType, setMagazineType] = useState(null);
+  const [newsType, setNewsType] = useState(null);
 
   useEffect(() => {
     fetchVideoData();
@@ -52,11 +55,11 @@ function EditLongVideos() {
     }
   }, [fetchedVideoData]);
 
-    useEffect(() => {
-      if (versionParam) {
-        fetchVersionHistory();
-      }
-    }, [versionParam]);
+  useEffect(() => {
+    if (versionParam) {
+      fetchVersionHistory();
+    }
+  }, [versionParam]);
 
   const fetchVideoData = async () => {
     try {
@@ -84,19 +87,25 @@ function EditLongVideos() {
           Topics,
           thumbnail,
           video_url,
-        } = fetchedVideoData;
+          magazineType,
+          newsType,
+        } = fetchedVideoData || {};
 
         form.setFieldsValue({
           title,
           description,
           category,
           topics: Topics,
+          magazineType,
+          newsType,
         });
 
-        setImageUrl(thumbnail);
-        setVideoUrl(video_url);
-        setSelectedCategory(category);
-        setSelectedTopic(Topics);
+        setImageUrl(thumbnail || "");
+        setVideoUrl(video_url || "");
+        setSelectedCategory(category || null);
+        setSelectedTopic(Topics || null);
+        setMagazineType(magazineType || null);
+        setNewsType(newsType || null);
       } else {
         message.error("Failed to load categories");
       }
@@ -105,48 +114,66 @@ function EditLongVideos() {
     }
   };
 
+  // ✅ Azure: Thumbnail upload (container: longvideoimage)
   const handleImageUpload = async ({ file }) => {
+    if (!file.type?.startsWith("image/")) {
+      message.error("Only image files are allowed for thumbnail!");
+      return false;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      message.error("Thumbnail must be smaller than 5MB!");
+      return false;
+    }
+
     setImageUploading(true);
-    const storageRef = ref(storage, `thumbnails/${file.name}`);
-    const uploadTask = uploadBytesResumable(storageRef, file);
-
-    uploadTask.on(
-      "state_changed",
-      () => {},
-      () => {
-        message.error("Thumbnail upload failed!");
-        setImageUploading(false);
-      },
-      async () => {
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-        setImageUrl(downloadURL);
+    try {
+      const response = await uploadFileToAzureStorage(file, "longvideoimage");
+      if (response?.blobUrl) {
+        setImageUrl(response.blobUrl);
         message.success("Thumbnail uploaded successfully!");
-        setImageUploading(false);
+      } else {
+        message.error("Failed to upload thumbnail.");
       }
-    );
+    } catch (error) {
+      console.error("Thumbnail upload error:", error);
+      message.error("Error uploading thumbnail to Azure.");
+    } finally {
+      setImageUploading(false);
+    }
+    return false; // prevent AntD auto-upload
   };
 
+  // ✅ Azure: Video upload (container: longvideos)
   const handleVideoUpload = async ({ file }) => {
-    setVideoUploading(true);
-    const storageRef = ref(storage, `videos/${file.name}`);
-    const uploadTask = uploadBytesResumable(storageRef, file);
+    if (!file.type?.startsWith("video/")) {
+      message.error("Only video files are allowed!");
+      return false;
+    }
+    // Optional size cap for edits; keep same as Add page for consistency
+    if (file.size > 500 * 1024 * 1024) {
+      message.error("Video must be smaller than 500MB!");
+      return false;
+    }
 
-    uploadTask.on(
-      "state_changed",
-      () => {},
-      () => {
-        message.error("Video upload failed!");
-        setVideoUploading(false);
-      },
-      async () => {
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-        setVideoUrl(downloadURL);
+    setVideoUploading(true);
+    try {
+      const response = await uploadFileToAzureStorage(file, "longvideos");
+      if (response?.blobUrl) {
+        setVideoUrl(response.blobUrl);
         message.success("Video uploaded successfully!");
-        setVideoUploading(false);
+      } else {
+        message.error("Failed to upload video.");
       }
-    );
+    } catch (error) {
+      console.error("Video upload error:", error);
+      message.error("Error uploading video to Azure.");
+    } finally {
+      setVideoUploading(false);
+    }
+    return false; // prevent AntD auto-upload
   };
-    const fetchVersionHistory = async () => {
+
+  const fetchVersionHistory = async () => {
     try {
       const res = await getLongVideoHistoryById(videoId);
       if (res.success && Array.isArray(res.data)) {
@@ -172,6 +199,8 @@ function EditLongVideos() {
         thumbnail: imageUrl,
         category: selectedCategory,
         topics: selectedTopic,
+        magazineType,
+        newsType,
       };
 
       const res = await updateLongVideoById(videoId, payload);
@@ -195,7 +224,6 @@ function EditLongVideos() {
 
     try {
       const res = await revertLongVideoByVersionNumber(videoId, versionParam);
-      console.log("Revert response:", res);
       if (res.success) {
         message.success(`Reverted to version ${previousVersion}`);
         navigate("/manage-LongVideo");
@@ -210,25 +238,8 @@ function EditLongVideos() {
 
   return (
     <div>
-      <div
-        // style={{
-        //   padding: "0 20px",
-        //   display: "flex",
-        //   justifyContent: "space-between",
-        //   alignItems: "center",
-        // }}
-      >
+      <div>
         <h1>Edit Long Video</h1>
-        {/* {previousVersion && (
-          <Button
-            icon={<RollbackOutlined />}
-            danger
-            type="primary"
-            onClick={handleRevert}
-          >
-            Revert to Version {previousVersion}
-          </Button>
-        )} */}
       </div>
 
       <div
@@ -282,16 +293,16 @@ function EditLongVideos() {
 
         {/* RIGHT - Form */}
         <Card title="General Information" style={{ width: "60%" }}>
-              {previousVersion && (
-                      <Button
-                        type="dashed"
-                        danger
-                        onClick={handleRevert}
-                        style={{ marginBottom: 16 }}
-                      >
-                        Revert to Version {previousVersion}
-                      </Button>
-                    )}
+          {previousVersion && (
+            <Button
+              type="dashed"
+              danger
+              onClick={handleRevert}
+              style={{ marginBottom: 16 }}
+            >
+              Revert to Version {previousVersion}
+            </Button>
+          )}
           <Form form={form} layout="vertical" onFinish={handleFormSubmit}>
             <Form.Item
               label="Title"
@@ -326,21 +337,31 @@ function EditLongVideos() {
               </Select>
             </Form.Item>
 
-            <Form.Item
-              label="Topics"
-              name="topics"
-              rules={[{ required: true, message: "Topics is required" }]}
-            >
-              <Select
-                placeholder="Select topic"
-                onChange={(val) => setSelectedTopic(val)}
+            {/* Magazine Type Radio Buttons */}
+            <Form.Item label="Magazine Type" name="magazineType">
+              <Radio.Group
+                onChange={(e) => setMagazineType(e.target.value)}
+                value={magazineType}
               >
-                {categories.map((cat) => (
-                  <Option key={cat._id} value={cat._id}>
-                    {cat.name}
-                  </Option>
-                ))}
-              </Select>
+                <Space direction="vertical">
+                  <Radio value="magazine">Vartha Janapada</Radio>
+                  <Radio value="magazine2">March of Karnataka</Radio>
+                </Space>
+              </Radio.Group>
+            </Form.Item>
+
+            {/* News Type Radio Buttons */}
+            <Form.Item label="News Type" name="newsType">
+              <Radio.Group
+                onChange={(e) => setNewsType(e.target.value)}
+                value={newsType}
+              >
+                <Space direction="vertical">
+                  <Radio value="statenews">State News</Radio>
+                  <Radio value="districtnews">District News</Radio>
+                  <Radio value="specialnews">Special News</Radio>
+                </Space>
+              </Radio.Group>
             </Form.Item>
 
             <Button type="primary" htmlType="submit" block loading={loading}>

@@ -11,6 +11,8 @@ import {
   Image,
   Row,
   Col,
+  Radio,
+  Space,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import {
@@ -19,8 +21,13 @@ import {
   getHistoryOfShortVideosById,
   revertVideoVersionByversionNumber,
 } from "../../service/ShortVideos/ShortVideoservice";
-import { storage } from "../../service/firebaseConfig";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+
+// 🔻 REMOVED Firebase
+// import { storage } from "../../service/firebaseConfig";
+// import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+
+// ✅ ADDED Azure
+import { uploadFileToAzureStorage } from "../../config/azurestorageservice";
 
 const { TextArea } = Input;
 
@@ -39,6 +46,9 @@ function EditShortVideo() {
   const [uploadingThumb, setUploadingThumb] = useState(false);
   const [versionHistory, setVersionHistory] = useState([]);
   const [previousVersion, setPreviousVersion] = useState(null);
+  const [magazineType, setMagazineType] = useState(null);
+  const [newsType, setNewsType] = useState(null);
+  const [isReverting, setIsReverting] = useState(false);
 
   useEffect(() => {
     fetchVideoData();
@@ -52,9 +62,13 @@ function EditShortVideo() {
         form.setFieldsValue({
           title: video.title,
           description: video.description,
+          magazineType: video.magazineType,
+          newsType: video.newsType,
         });
         setVideoUrl(video.video_url);
         setThumbnailUrl(video.thumbnail);
+        setMagazineType(video.magazineType);
+        setNewsType(video.newsType);
       } else {
         message.error(res.message || "Failed to load video");
       }
@@ -65,7 +79,6 @@ function EditShortVideo() {
     }
   };
 
-  // Fetch version history if editing a specific version
   useEffect(() => {
     if (versionNumber) {
       const fetchVersionHistory = async () => {
@@ -81,7 +94,7 @@ function EditShortVideo() {
               (v) => v.versionNumber === versionNumber - 1
             );
             if (prev) {
-              setPreviousVersion(prev.versionNumber);
+              setPreviousVersion(prev);
             }
           }
         } catch (err) {
@@ -98,54 +111,86 @@ function EditShortVideo() {
       return;
     }
 
+    setIsReverting(true);
     try {
       const res = await revertVideoVersionByversionNumber(
         videoId,
         versionNumber
       );
 
-      console.log("Revert response:", res);
       if (res.success) {
-        message.success(`Reverted to version ${previousVersion}`);
-        navigate("/manage-shortvideos");
+        message.success(`Successfully reverted to version ${previousVersion.versionNumber}`);
+        await fetchVideoData();
+        setTimeout(() => {
+          navigate("/manage-shortvideos");
+        }, 1000);
       } else {
         message.error(res.message || "Revert failed");
       }
     } catch (err) {
       message.error("Unexpected error while reverting");
+      console.error("Revert error:", err);
+    } finally {
+      setIsReverting(false);
     }
   };
 
+  // ✅ Upload video to Azure container "shortvideos"
   const handleVideoUpload = async ({ file }) => {
+    if (!file.type.startsWith("video/")) {
+      message.error("Only video files are allowed!");
+      return false;
+    }
+    if (file.size > 100 * 1024 * 1024) {
+      message.error("Video must be smaller than 100MB!");
+      return false;
+    }
+
     setUploadingVideo(true);
     try {
-      const storageRef = ref(storage, `shortVideos/${file.name}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-      await uploadTask;
-      const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-      setVideoUrl(downloadURL);
-      message.success("Video uploaded successfully");
-    } catch {
-      message.error("Failed to upload video");
+      const response = await uploadFileToAzureStorage(file, "shortvideos");
+      if (response?.blobUrl) {
+        setVideoUrl(response.blobUrl);
+        message.success("Video uploaded successfully!");
+      } else {
+        message.error("Failed to upload video.");
+      }
+    } catch (error) {
+      console.error("Video upload error:", error);
+      message.error("Error uploading video to Azure.");
     } finally {
       setUploadingVideo(false);
     }
+    return false; // Prevent AntD auto-upload
   };
 
+  // ✅ Upload thumbnail to Azure container "shortvideoimages"
   const handleThumbnailUpload = async ({ file }) => {
+    if (!file.type.startsWith("image/")) {
+      message.error("Only image files are allowed!");
+      return false;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      message.error("Thumbnail must be smaller than 5MB!");
+      return false;
+    }
+
     setUploadingThumb(true);
     try {
-      const storageRef = ref(storage, `thumbnails/${file.name}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-      await uploadTask;
-      const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-      setThumbnailUrl(downloadURL);
-      message.success("Thumbnail uploaded successfully");
-    } catch {
-      message.error("Failed to upload thumbnail");
+      const response = await uploadFileToAzureStorage(file, "shortvideoimages");
+      if (response?.blobUrl) {
+        setThumbnailUrl(response.blobUrl);
+        message.success("Thumbnail uploaded successfully!");
+      } else {
+        message.error("Failed to upload thumbnail.");
+      }
+    } catch (error) {
+      console.error("Thumbnail upload error:", error);
+      message.error("Error uploading thumbnail to Azure.");
     } finally {
       setUploadingThumb(false);
     }
+    return false; // Prevent AntD auto-upload
   };
 
   const onFinish = async (values) => {
@@ -155,6 +200,8 @@ function EditShortVideo() {
         description: values.description,
         video_url: videoUrl,
         thumbnail: thumbnailUrl,
+        magazineType: magazineType,
+        newsType: newsType,
       };
       const res = await updatevideoById(videoId, payload);
       if (res.success) {
@@ -180,18 +227,20 @@ function EditShortVideo() {
     <div style={{ padding: 24 }}>
       <Card title="Edit Short Video">
         {previousVersion && (
-          <Button
-            type="dashed"
-            danger
-            onClick={handleRevert}
-            style={{ marginBottom: 16 }}
-          >
-            Revert to Version {previousVersion}
-          </Button>
+          <div style={{ marginBottom: 16 }}>
+            <Button
+              type="dashed"
+              danger
+              onClick={handleRevert}
+              loading={isReverting}
+            >
+              Revert to Version {previousVersion.versionNumber}
+            </Button>
+          </div>
         )}
         <Form layout="vertical" form={form} onFinish={onFinish}>
           <Row gutter={24}>
-            {/* Column 1: Video Upload */}
+            {/* Video Upload */}
             <Col xs={24} md={8}>
               <Form.Item label="Video File">
                 <Upload
@@ -220,7 +269,7 @@ function EditShortVideo() {
               </Form.Item>
             </Col>
 
-            {/* Column 2: Thumbnail Upload */}
+            {/* Thumbnail Upload */}
             <Col xs={24} md={8}>
               <Form.Item label="Thumbnail Image">
                 <Upload
@@ -246,7 +295,7 @@ function EditShortVideo() {
               </Form.Item>
             </Col>
 
-            {/* Column 3: General Info */}
+            {/* General Info */}
             <Col xs={24} md={8}>
               <Form.Item
                 label="Title"
@@ -260,7 +309,32 @@ function EditShortVideo() {
                 <TextArea rows={4} placeholder="Enter description" />
               </Form.Item>
 
-              <Button type="primary" htmlType="submit" block>
+              <Form.Item label="Magazine Type" name="magazineType">
+                <Radio.Group 
+                  onChange={(e) => setMagazineType(e.target.value)}
+                  value={magazineType}
+                >
+                  <Space direction="vertical">
+                    <Radio value="magazine">Vartha Janapada</Radio>
+                    <Radio value="magazine2">March of Karnataka</Radio>
+                  </Space>
+                </Radio.Group>
+              </Form.Item>
+
+              <Form.Item label="News Type" name="newsType">
+                <Radio.Group 
+                  onChange={(e) => setNewsType(e.target.value)}
+                  value={newsType}
+                >
+                  <Space direction="vertical">
+                    <Radio value="statenews">State News</Radio>
+                    <Radio value="districtnews">District News</Radio>
+                    <Radio value="specialnews">Special News</Radio>
+                  </Space>
+                </Radio.Group>
+              </Form.Item>
+
+              <Button type="primary" htmlType="submit" block disabled>
                 Update Video
               </Button>
             </Col>
@@ -272,20 +346,3 @@ function EditShortVideo() {
 }
 
 export default EditShortVideo;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

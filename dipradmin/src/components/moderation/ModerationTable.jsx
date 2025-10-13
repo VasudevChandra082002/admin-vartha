@@ -20,7 +20,7 @@ function ModerationTable() {
     const fetchComments = async () => {
       try {
         const response = await getAllComments();
-        console.log("API response:", response);
+        // console.log("API response:", response);
         if (response.success) {
           const transformedData = response.data.map((comment) => ({
             key: comment._id,

@@ -1,22 +1,22 @@
 
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
-import { CategoryWrapper } from "../category/categoryPage.style";
-import CategoryTable from "./CategoryTable";
+import { PhotosWrapper } from "./Photos.style";
+import PhotosTable from "../../components/photos/photostable";
+// import BannersTable from "../../components/banners/BannersTable";
 
-function CategoryPage() {
+function PhtotosPage() {
   const navigate = useNavigate();
 
   const handleAddBannerClick = () => {
-    navigate("/category/add"); // Navigate to the new banner creation page
+    navigate("/manage-photos/addphotos"); // Navigate to the new banner creation page
   };
 
   return (
-    <CategoryWrapper>
+    <PhotosWrapper>
       <div className="header-section">
-        <div className="block-title">Category</div>
+        <div className="block-title">Photos</div>
 
         <Button
           type="primary"
@@ -24,16 +24,16 @@ function CategoryPage() {
           className="add-article-btn"
           onClick={handleAddBannerClick}
         >
-          Add Category
+          Add Photos
         </Button>
       </div>
 
       {/* Banners Table */}
       <div className="block-Table">
-        <CategoryTable />
+        <PhotosTable />
       </div>
-    </CategoryWrapper>
+    </PhotosWrapper>
   );
 }
 
-export default CategoryPage;
+export default PhtotosPage;

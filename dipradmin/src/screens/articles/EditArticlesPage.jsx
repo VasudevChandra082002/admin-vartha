@@ -9,6 +9,8 @@ import {
   Card,
   Select,
   Spin,
+  Radio,
+  Space,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
@@ -18,12 +20,10 @@ import {
   updateArticle,
   revertNewsByVersionNumber,
 } from "../../service/Article/ArticleService";
-import { storage } from "../../service/firebaseConfig";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { getCategories } from "../../service/categories/CategoriesApi";
-// import moment from "moment";
-// import moment from "moment/moment";
 import moment from "moment/moment";
+import { uploadFileToAzureStorage } from "../../config/azurestorageservice";
+
 const { TextArea } = Input;
 const { Option } = Select;
 
@@ -41,20 +41,20 @@ function EditArticlesPage() {
   const [categories, setCategories] = useState([]);
   const [fetching, setFetching] = useState(true);
   const [versionHistory, setVersionHistory] = useState([]);
-const [previousVersion, setPreviousVersion] = useState(null);
-
+  const [previousVersion, setPreviousVersion] = useState(null);
 
   // Fetch article data
   useEffect(() => {
     const fetchArticle = async () => {
       try {
         const response = await getArticleById(articleId);
-        console.log("edit article page article id", response);
         if (response.success) {
           const data = response.data;
           const formattedValues = {
             ...data,
-            publishedAt: moment(data.publishedAt),
+            // ensure moment for DatePicker
+            publishedAt: data.publishedAt ? moment(data.publishedAt) : null,
+            // ensure nested fields exist
             hindi: {
               title: data.hindi?.title || "",
               description: data.hindi?.description || "",
@@ -67,10 +67,13 @@ const [previousVersion, setPreviousVersion] = useState(null);
               title: data.English?.title || "",
               description: data.English?.description || "",
             },
+            // 👇 include these so radios are pre-selected
+            magazineType: data.magazineType || undefined, // "magazine" | "magazine2"
+            newsType: data.newsType || undefined,         // "statenews" | "districtnews" | "specialnews"
           };
 
           setInitialValues(formattedValues);
-          setImageUrl(data.newsImage);
+          setImageUrl(data.newsImage || "");
           form.setFieldsValue(formattedValues);
         } else {
           message.error("Failed to fetch article details.");
@@ -85,32 +88,32 @@ const [previousVersion, setPreviousVersion] = useState(null);
     fetchArticle();
   }, [articleId, form]);
 
+  // Version history (for revert)
   useEffect(() => {
-  const fetchVersionHistory = async () => {
-    try {
-      const response = await getHistoryById(articleId);
-      if (response.success && Array.isArray(response.data)) {
-        const sorted = response.data.sort((a, b) => b.versionNumber - a.versionNumber);
-        setVersionHistory(sorted);
+    const fetchVersionHistory = async () => {
+      try {
+        const response = await getHistoryById(articleId);
+        if (response.success && Array.isArray(response.data)) {
+          const sorted = response.data.sort((a, b) => b.versionNumber - a.versionNumber);
+          setVersionHistory(sorted);
 
-        if (versionNumber) {
-          const currentVer = parseInt(versionNumber);
-          const prev = sorted.find((v) => v.versionNumber === currentVer - 1);
-          if (prev) {
-            setPreviousVersion(prev.versionNumber);
+          if (versionNumber) {
+            const currentVer = parseInt(versionNumber);
+            const prev = sorted.find((v) => v.versionNumber === currentVer - 1);
+            if (prev) {
+              setPreviousVersion(prev.versionNumber);
+            }
           }
         }
+      } catch (err) {
+        console.error("Error fetching version history", err);
       }
-    } catch (err) {
-      console.error("Error fetching version history", err);
+    };
+
+    if (versionNumber) {
+      fetchVersionHistory();
     }
-  };
-
-  if (versionNumber) {
-    fetchVersionHistory();
-  }
-}, [versionNumber, articleId]);
-
+  }, [versionNumber, articleId]);
 
   // Fetch categories
   useEffect(() => {
@@ -142,7 +145,7 @@ const [previousVersion, setPreviousVersion] = useState(null);
 
       const payload = {
         ...values,
-        publishedAt: values.publishedAt.toISOString(),
+        publishedAt: values.publishedAt?.toISOString(),
         newsImage: imageUrl,
         hindi: {
           title: values.hindi?.title || "",
@@ -156,6 +159,9 @@ const [previousVersion, setPreviousVersion] = useState(null);
           title: values.English?.title || "",
           description: values.English?.description || "",
         },
+        // 👇 make sure these are sent to match your schema
+        magazineType: values.magazineType, // "magazine" | "magazine2"
+        newsType: values.newsType,         // "statenews" | "districtnews" | "specialnews"
       };
 
       const response = await updateArticle(articleId, payload);
@@ -172,52 +178,57 @@ const [previousVersion, setPreviousVersion] = useState(null);
     }
   };
 
-  // Upload image
+  // Azure image upload to the "newsarticles" container
   const handleUpload = async ({ file }) => {
-    setImageUploading(true);
-    const storageRef = ref(storage, `newsImages/${file.name}`);
-    const uploadTask = uploadBytesResumable(storageRef, file);
+    if (!file.type?.startsWith("image/")) {
+      message.error("Only image files are allowed!");
+      return false;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      message.error("Image must be smaller than 5MB!");
+      return false;
+    }
 
-    uploadTask.on(
-      "state_changed",
-      null,
-      (error) => {
-        message.error("Image upload failed!");
-        setImageUploading(false);
-      },
-      async () => {
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-        setImageUrl(downloadURL);
+    setImageUploading(true);
+    try {
+      const res = await uploadFileToAzureStorage(file, "newsarticles");
+      if (res?.blobUrl) {
+        setImageUrl(res.blobUrl);
         message.success("Image uploaded successfully!");
-        setImageUploading(false);
+      } else {
+        message.error("Failed to upload image.");
       }
-    );
+    } catch (err) {
+      console.error("Azure upload error:", err);
+      message.error("Error uploading image to Azure.");
+    } finally {
+      setImageUploading(false);
+    }
+
+    return false;
   };
 
   // Handle revert
-const handleRevert = async () => {
-  const currentVer = parseInt(versionNumber);
-  if (!previousVersion || !currentVer) {
-    message.error("Invalid version to revert.");
-    return;
-  }
-
-  try {
-    console.log("Reverting to version:", previousVersion);
-    const res = await revertNewsByVersionNumber(articleId, currentVer);
-    if (res.success) {
-      message.success(`Successfully reverted to version ${previousVersion}.`);
-      navigate("/manage-Articles");
-    } else {
-      message.error(res.message || "Failed to revert version.");
+  const handleRevert = async () => {
+    const currentVer = parseInt(versionNumber);
+    if (!previousVersion || !currentVer) {
+      message.error("Invalid version to revert.");
+      return;
     }
-  } catch (err) {
-    console.error("Revert error:", err);
-    message.error("Unexpected error while reverting.");
-  }
-};
 
-
+    try {
+      const res = await revertNewsByVersionNumber(articleId, currentVer);
+      if (res.success) {
+        message.success(`Successfully reverted to version ${previousVersion}.`);
+        navigate("/manage-Articles");
+      } else {
+        message.error(res.message || "Failed to revert version.");
+      }
+    } catch (err) {
+      console.error("Revert error:", err);
+      message.error("Unexpected error while reverting.");
+    }
+  };
 
   if (fetching) {
     return (
@@ -239,11 +250,7 @@ const handleRevert = async () => {
     >
       {/* LEFT - Image Upload */}
       <Card title="Article Image" style={{ width: "40%" }}>
-        <Upload
-          customRequest={handleUpload}
-          showUploadList={false}
-          accept="image/*"
-        >
+        <Upload customRequest={handleUpload} showUploadList={false} accept="image/*">
           <Button icon={<UploadOutlined />} loading={imageUploading}>
             {imageUploading ? "Uploading..." : "Upload Image"}
           </Button>
@@ -259,16 +266,17 @@ const handleRevert = async () => {
 
       {/* RIGHT - Form */}
       <Card title="General Information" style={{ width: "60%" }}>
-       {previousVersion && (
-  <Button
-    type="dashed"
-    danger
-    onClick={handleRevert}
-    style={{ marginBottom: 16 }}
-  >
-    Revert to Version {previousVersion}
-  </Button>
-)}
+        {previousVersion && (
+          <Button
+            type="dashed"
+            danger
+            onClick={handleRevert}
+            style={{ marginBottom: 16 }}
+          >
+            Revert to Version {previousVersion}
+          </Button>
+        )}
+
         <Form
           form={form}
           layout="vertical"
@@ -367,6 +375,35 @@ const handleRevert = async () => {
             rules={[{ required: true, message: "Published date is required" }]}
           >
             <DatePicker style={{ width: "100%" }} />
+          </Form.Item>
+
+          {/* 👇 NEW: Magazine Type (radio) */}
+          <Form.Item
+            label="Magazine Type"
+            name="magazineType"
+            rules={[{ required: true, message: "Please select a magazine type" }]}
+          >
+            <Radio.Group>
+              <Space direction="vertical">
+                <Radio value="magazine">Vartha Janapada</Radio>
+                <Radio value="magazine2">March Of Karnataka</Radio>
+              </Space>
+            </Radio.Group>
+          </Form.Item>
+
+          {/* 👇 NEW: News Type (radio) */}
+          <Form.Item
+            label="News Type"
+            name="newsType"
+            rules={[{ required: true, message: "Please select a news type" }]}
+          >
+            <Radio.Group>
+              <Space direction="vertical">
+                <Radio value="statenews">State News</Radio>
+                <Radio value="districtnews">District News</Radio>
+                <Radio value="specialnews">Special News</Radio>
+              </Space>
+            </Radio.Group>
           </Form.Item>
 
           <Button type="primary" htmlType="submit" block loading={loading}>

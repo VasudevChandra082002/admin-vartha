@@ -30,9 +30,13 @@ export const deleteCategory = async (categoryId) => {
 
 export const addCategory = async (category) => {
   try {
+     const token = localStorage.getItem("token");
     const response = await fetch(`${BASE_URL}/api/category/createCategory`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+     method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`, // ✅ Proper authorization
+      },
       body: JSON.stringify(category),
     });
     const data = await response.json();
@@ -49,6 +53,24 @@ export const updateCategory = async (category, categoryId) => {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(category),
+    });
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error loading data:", error);
+    throw error;
+  }
+};
+
+export const approveCategory = async (categoryId) => {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${BASE_URL}/api/category/approveCategory/${categoryId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json",
+         Authorization: `Bearer ${token}`,
+      },
+
     });
     const data = await response.json();
     return data;

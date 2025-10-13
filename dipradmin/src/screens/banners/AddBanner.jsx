@@ -9,8 +9,7 @@ import {
   message
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
-import { storage } from "../../service/firebaseConfig";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { uploadFileToAzureStorage } from "../../config/azurestorageservice"; // ✅ Azure service
 import { createBanner } from "../../service/Banner/BannersService";
 
 const { TextArea } = Input;
@@ -43,7 +42,7 @@ function AddBannerPage() {
       
       if (response && response._id) {
         message.success("Banner created successfully!");
-        navigate("/manage-banners"); // Redirect to banners list page after creation
+        navigate("/manage-banners");
       } else {
         message.error("Failed to create banner.");
       }
@@ -56,26 +55,36 @@ function AddBannerPage() {
   };
 
   const handleUpload = async ({ file }) => {
-    setImageUploading(true);
-    const storageRef = ref(storage, `banners/${file.name}`);
-    const uploadTask = uploadBytesResumable(storageRef, file);
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      message.error("Only image files are allowed!");
+      return false;
+    }
 
-    uploadTask.on(
-      "state_changed",
-      (snapshot) => {
-        // Optional: Progress tracking
-      },
-      (error) => {
-        message.error("Image upload failed!");
-        setImageUploading(false);
-      },
-      async () => {
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-        setImageUrl(downloadURL);
+    // Optional: Limit file size (e.g., 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      message.error("Image must be smaller than 5MB!");
+      return false;
+    }
+
+    setImageUploading(true);
+    try {
+      // Upload to Azure container "banners"
+      const response = await uploadFileToAzureStorage(file, "banners");
+      if (response?.blobUrl) {
+        setImageUrl(response.blobUrl);
         message.success("Image uploaded successfully!");
-        setImageUploading(false);
+      } else {
+        message.error("Failed to upload image.");
       }
-    );
+    } catch (error) {
+      console.error("Banner image upload error:", error);
+      message.error("Error uploading image to Azure.");
+    } finally {
+      setImageUploading(false);
+    }
+
+    return false; // Prevent Ant Design's default upload behavior
   };
 
   return (
@@ -106,7 +115,7 @@ function AddBannerPage() {
             <img
               src={imageUrl}
               alt="Banner"
-              style={{ width: "100%", marginTop: 10 }}
+              style={{ width: "100%", marginTop: 10, objectFit: "cover" }}
             />
           )}
         </Card>
@@ -130,13 +139,12 @@ function AddBannerPage() {
               <TextArea rows={4} placeholder="Enter banner description" />
             </Form.Item>
 
-            {/* Add any additional fields you need for banners */}
-
             <Button
               type="primary"
               htmlType="submit"
               block
-              loading={loading || imageUploading}
+              loading={loading}
+              disabled={imageUploading} // Optional: disable while uploading
             >
               Create Banner
             </Button>

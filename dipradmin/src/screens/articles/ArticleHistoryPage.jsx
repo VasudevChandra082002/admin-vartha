@@ -36,7 +36,7 @@ function ArticleHistoryPage() {
     const fetchHistory = async () => {
       try {
         const response = await getHistoryById(articleId);
-        console.log("Article history response", response);
+        // console.log("Article history response", response);
         if (response.success) {
           const sorted = [...response.data].sort(
             (a, b) => b.versionNumber - a.versionNumber
