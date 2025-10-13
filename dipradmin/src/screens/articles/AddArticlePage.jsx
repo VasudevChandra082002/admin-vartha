@@ -9,17 +9,14 @@ import {
   Card,
   Select,
   Modal,
+  Radio,
+  Space,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
-import {
-  createArticle,
-  updateArticle,
-} from "../../service/Article/ArticleService";
+import { createArticle, updateArticle } from "../../service/Article/ArticleService";
 import { useNavigate } from "react-router-dom";
-import { storage } from "../../service/firebaseConfig"; // Import Firebase storage
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { getCategories } from "../../service/categories/CategoriesApi"; // Import Category service
-// import moment from "moment";
+import { uploadFileToAzureStorage } from "../../config/azurestorageservice";
+import { getCategories } from "../../service/categories/CategoriesApi";
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -32,8 +29,8 @@ function AddArticlePage() {
   const [imageUrl, setImageUrl] = useState("");
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [previewVisible, setPreviewVisible] = useState(false); // For Modal visibility
-  const [articleData, setArticleData] = useState(null); // For storing article preview data
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [articleData, setArticleData] = useState(null);
 
   useEffect(() => {
     fetchCategories();
@@ -47,7 +44,7 @@ function AddArticlePage() {
       } else {
         message.error("Failed to load categories.");
       }
-    } catch (error) {
+    } catch {
       message.error("Error fetching categories.");
     }
   };
@@ -64,22 +61,25 @@ function AddArticlePage() {
       const payload = {
         ...values,
         publishedAt: values.publishedAt.toISOString(),
-        newsImage: imageUrl, // Firebase Image URL
-        category: selectedCategory, // Pass category _id
+        newsImage: imageUrl,
+        category: selectedCategory,
+        // 👇 These two come from the form's radio groups
+        magazineType: values.magazineType, // "magazine" | "magazine2"
+        newsType: values.newsType,         // "statenews" | "districtnews" | "specialnews"
       };
 
       const response = await createArticle(payload);
       if (response.success) {
         message.success("Article added successfully!");
-        setArticleData(response.data); // Set the data to preview modal
-        setPreviewVisible(true); // Show the preview modal
+        setArticleData(response.data);
+        setPreviewVisible(true);
         form.resetFields();
         setImageUrl("");
         setSelectedCategory(null);
       } else {
         message.error("Failed to add article.");
       }
-    } catch (error) {
+    } catch {
       message.error("Error adding article.");
     } finally {
       setLoading(false);
@@ -87,47 +87,49 @@ function AddArticlePage() {
   };
 
   const handleUpload = async ({ file }) => {
-    setImageUploading(true);
-    const storageRef = ref(storage, `newsImages/${file.name}`);
-    const uploadTask = uploadBytesResumable(storageRef, file);
+    if (!file.type.startsWith("image/")) {
+      message.error("Only image files are allowed!");
+      return false;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      message.error("Image must be smaller than 5MB!");
+      return false;
+    }
 
-    uploadTask.on(
-      "state_changed",
-      (snapshot) => {
-        // Optional: Progress tracking
-      },
-      (error) => {
-        message.error("Image upload failed!");
-        setImageUploading(false);
-      },
-      async () => {
-        // Get download URL
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-        setImageUrl(downloadURL);
+    setImageUploading(true);
+    try {
+      const response = await uploadFileToAzureStorage(file, "newsarticles");
+      if (response?.blobUrl) {
+        setImageUrl(response.blobUrl);
         message.success("Image uploaded successfully!");
-        setImageUploading(false);
+      } else {
+        message.error("Failed to upload image.");
       }
-    );
+    } catch (error) {
+      console.error("Article image upload error:", error);
+      message.error("Error uploading image to Azure.");
+    } finally {
+      setImageUploading(false);
+    }
+    return false;
   };
 
   const handlePreviewUpdate = async () => {
-    const updatedData = form.getFieldsValue(); // Get all form values
-
+    const updatedData = form.getFieldsValue();
     try {
       const payload = {
         ...updatedData,
-        isLive: true, // Ensure isLive is always true
+        isLive: true,
       };
-
       const response = await updateArticle(articleData._id, payload);
       if (response.success) {
-        message.success("Article updated successfully!");
-        setPreviewVisible(false); // Close the modal
-        setArticleData(response.data); // Update preview data
+        message.success("Article created successfully!");
+        setPreviewVisible(false);
+        setArticleData(response.data);
       } else {
         message.error("Failed to update article.");
       }
-    } catch (error) {
+    } catch {
       message.error("Error updating article.");
     }
   };
@@ -150,6 +152,7 @@ function AddArticlePage() {
             customRequest={handleUpload}
             showUploadList={false}
             accept="image/*"
+            disabled={imageUploading}
           >
             <Button icon={<UploadOutlined />} loading={imageUploading}>
               {imageUploading ? "Uploading..." : "Upload Image"}
@@ -160,7 +163,7 @@ function AddArticlePage() {
             <img
               src={imageUrl}
               alt="Article"
-              style={{ width: "100%", marginTop: 10 }}
+              style={{ width: "100%", marginTop: 10, objectFit: "cover" }}
             />
           )}
         </Card>
@@ -212,11 +215,38 @@ function AddArticlePage() {
             <Form.Item
               label="Published Date"
               name="publishedAt"
-              rules={[
-                { required: true, message: "Published date is required" },
-              ]}
+              rules={[{ required: true, message: "Published date is required" }]}
             >
               <DatePicker style={{ width: "100%" }} />
+            </Form.Item>
+
+            {/* 👇 Magazine Type (radio) */}
+            <Form.Item
+              label="Magazine Type"
+              name="magazineType"
+              rules={[{ required: true, message: "Please select a magazine type" }]}
+            >
+              <Radio.Group>
+                <Space direction="vertical">
+                  <Radio value="magazine">Vartha Janapada</Radio>
+                  <Radio value="magazine2">March Of Karnataka</Radio>
+                </Space>
+              </Radio.Group>
+            </Form.Item>
+
+            {/* 👇 News Type (radio) */}
+            <Form.Item
+              label="News Type"
+              name="newsType"
+              rules={[{ required: true, message: "Please select a news type" }]}
+            >
+              <Radio.Group>
+                <Space direction="vertical">
+                  <Radio value="statenews">State News</Radio>
+                  <Radio value="districtnews">District News</Radio>
+                  <Radio value="specialnews">Special News</Radio>
+                </Space>
+              </Radio.Group>
             </Form.Item>
 
             <Button type="primary" htmlType="submit" block loading={loading}>
@@ -229,7 +259,7 @@ function AddArticlePage() {
       {/* Preview Modal */}
       <Modal
         title="Preview Article"
-        visible={previewVisible}
+        open={previewVisible}
         onCancel={() => setPreviewVisible(false)}
         onOk={handlePreviewUpdate}
         okText="Confirm"
@@ -241,6 +271,26 @@ function AddArticlePage() {
 
           <Form.Item label="Description" name="description">
             <TextArea rows={4} />
+          </Form.Item>
+
+          {/* Optional: show/edit these in preview too */}
+          <Form.Item label="Magazine Type" name="magazineType">
+            <Radio.Group>
+              <Space direction="vertical">
+                <Radio value="magazine">Vartha Janapada</Radio>
+                <Radio value="magazine2">March Of Karnataka</Radio>
+              </Space>
+            </Radio.Group>
+          </Form.Item>
+
+          <Form.Item label="News Type" name="newsType">
+            <Radio.Group>
+              <Space direction="vertical">
+                <Radio value="statenews">State News</Radio>
+                <Radio value="districtnews">District News</Radio>
+                <Radio value="specialnews">Special News</Radio>
+              </Space>
+            </Radio.Group>
           </Form.Item>
 
           <Form.Item label="Hindi Title" name={["hindi", "title"]}>
@@ -255,10 +305,7 @@ function AddArticlePage() {
             <Input />
           </Form.Item>
 
-          <Form.Item
-            label="Kannada Description"
-            name={["kannada", "description"]}
-          >
+          <Form.Item label="Kannada Description" name={["kannada", "description"]}>
             <TextArea rows={4} />
           </Form.Item>
 
@@ -266,10 +313,7 @@ function AddArticlePage() {
             <Input />
           </Form.Item>
 
-          <Form.Item
-            label="English Description"
-            name={["English", "description"]}
-          >
+          <Form.Item label="English Description" name={["English", "description"]}>
             <TextArea rows={4} />
           </Form.Item>
 

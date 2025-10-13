@@ -1,0 +1,35 @@
+/* Style for selected sidebar item */
+.ant-menu-item-selected {
+  background-color: #000 !important;
+  color: #fff !important;
+}
+
+/* Optional: Keep icon color white in selected state */
+.ant-menu-item-selected .anticon {
+  color: #fff !important;
+}
+
+.user-profile-card:hover {
+  transform: translateY(-7px);
+}
+
+.stat-card:hover {
+  transform: translateY(-7px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  background: #e6e6e6;
+}
+
+.hover-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+
+}
+/* 
+.hover-card:hover {
+  transform: translateY(-7px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+    background: #e6e6e6;
+} */

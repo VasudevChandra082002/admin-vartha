@@ -9,16 +9,23 @@ import {
   Typography,
   Input,
   Space,
+  Tag,
+  Descriptions,
 } from "antd";
 import {
   getMagazines,
-  deleteMagazine,
-} from "../../service/Magazine/MagazineService"; // Import the necessary functions
+  deleteMagazine2,
+  approveMagazine2,
+  getMagazineHistoryById,
+  // getMagazineBydid,
+  // updateMagazine
+} from "../../service/Magazine/MagazineService2";
 import {
   EyeOutlined,
   EditOutlined,
   DeleteOutlined,
   SearchOutlined,
+  CheckOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 
@@ -29,9 +36,12 @@ function MagazineTable() {
   const [filteredMagazines, setFilteredMagazines] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isApprovalModalVisible, setIsApprovalModalVisible] = useState(false);
   const [selectedMagazine, setSelectedMagazine] = useState(null);
   const [searchText, setSearchText] = useState("");
+  const [approving, setApproving] = useState(false);
   const navigate = useNavigate();
+  const userRole = localStorage.getItem("role");
 
   useEffect(() => {
     fetchMagazines();
@@ -55,7 +65,7 @@ function MagazineTable() {
 
   const handleDelete = async (id) => {
     try {
-      const response = await deleteMagazine(id);
+      const response = await deleteMagazine2(id);
       if (response.success) {
         message.success("Magazine deleted successfully!");
         const updatedMagazines = magazines.filter(
@@ -64,7 +74,7 @@ function MagazineTable() {
         setMagazines(updatedMagazines);
         setFilteredMagazines(updatedMagazines);
       } else {
-        message.error("Failed to delete magazine");
+        message.error(response.message || "Failed to delete magazine");
       }
     } catch (error) {
       message.error("Error deleting magazine");
@@ -76,6 +86,39 @@ function MagazineTable() {
     setIsModalVisible(true);
   };
 
+  const handleStatusClick = (magazine) => {
+    if (userRole === "admin" && magazine.status === "pending") {
+      setSelectedMagazine(magazine);
+      setIsApprovalModalVisible(true);
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!selectedMagazine) return;
+
+    setApproving(true);
+    try {
+      const response = await approveMagazine2(selectedMagazine._id);
+      if (response.success) {
+        message.success("Magazine approved successfully!");
+        const updatedMagazines = magazines.map((magazine) =>
+          magazine._id === selectedMagazine._id
+            ? { ...magazine, status: "approved" }
+            : magazine
+        );
+        setMagazines(updatedMagazines);
+        setFilteredMagazines(updatedMagazines);
+        setIsApprovalModalVisible(false);
+      } else {
+        message.error(response.message || "Failed to approve magazine");
+      }
+    } catch (error) {
+      message.error("Error approving magazine");
+    } finally {
+      setApproving(false);
+    }
+  };
+
   const handleSearch = (e) => {
     const value = e.target.value.toLowerCase();
     setSearchText(value);
@@ -85,13 +128,33 @@ function MagazineTable() {
     setFilteredMagazines(filtered);
   };
 
-  const handleEdit = (id) => {
-    navigate(`/edit-magazine2/${id}`);
+  // const handleEdit = (id) => {
+  //   navigate(`/magazine1-history/${id}`);
+  // };
+
+  const handleEdit = async (id) => {
+    try {
+      const res = await getMagazineHistoryById(id);
+      if (res.success && Array.isArray(res.data)) {
+        if (res.data.length <= 1) {
+          navigate(`/edit-marchofkarnataka/${id}`);
+        } else {
+          navigate(`/magazine2-history/${id}`);
+        }
+      } else {
+        navigate(`/edit-marchofkarnataka/${id}`);
+      }
+    } catch (err) {
+      message.warning(
+        "Error checking magazine history. Redirecting to edit page."
+      );
+      navigate(`/edit-marchofkarnataka/${id}`);
+    }
   };
 
   const columns = [
     {
-      title: "Thumbnail",
+      title: "Thumbnail march",
       dataIndex: "magazineThumbnail",
       key: "magazineThumbnail",
       render: (text) => (
@@ -109,6 +172,7 @@ function MagazineTable() {
       dataIndex: "editionNumber",
       key: "editionNumber",
     },
+
     {
       title: "Published Date",
       dataIndex: "createdTime",
@@ -126,31 +190,78 @@ function MagazineTable() {
       ),
     },
     {
+      title: "Published month",
+      dataIndex: "publishedMonth",
+      key: "publishedMonth",
+    },
+    {
+      title: "Published year",
+      dataIndex: "publishedYear",
+      key: "publishedYear",
+    },
+    {
+      title: "Created By",
+      dataIndex: "createdBy",
+      key: "createdBy",
+      render: (_, record) => record.createdBy?.displayName,
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      render: (status, record) => (
+        <Tag
+          color={status === "approved" ? "green" : "orange"}
+          style={{
+            cursor:
+              userRole === "admin" && status !== "approved"
+                ? "pointer"
+                : "default",
+          }}
+          onClick={() => handleStatusClick(record)}
+        >
+          {status.toUpperCase()}
+          {userRole === "admin" && status === "pending" && <CheckOutlined />}
+        </Tag>
+      ),
+    },
+    {
       title: "Actions",
       key: "actions",
       render: (_, record) => (
-        <>
+        <Space>
           <Button
             type="default"
             icon={<EyeOutlined />}
-            style={{ marginRight: 8 }}
             onClick={() => handleView(record)}
           />
           <Button
             type="primary"
             icon={<EditOutlined />}
-            style={{ marginRight: 8 }}
-            onClick={() => handleEdit(record._id)} // Navigate to edit page
+            onClick={() => handleEdit(record._id)}
           />
-          <Popconfirm
+          {/* <Popconfirm
             title="Are you sure to delete this magazine?"
             onConfirm={() => handleDelete(record._id)}
             okText="Yes"
             cancelText="No"
           >
-            <Button type="danger" icon={<DeleteOutlined />} />
-          </Popconfirm>
-        </>
+            <Button danger icon={<DeleteOutlined />} />
+          </Popconfirm> */}
+
+          {(userRole === "admin" ||
+            (userRole === "moderator" &&
+              record.createdBy?._id === localStorage.getItem("userId"))) && (
+            <Popconfirm
+              title="Are you sure to delete this banner?"
+              onConfirm={() => handleDelete(record._id)}
+              okText="Yes"
+              cancelText="No"
+            >
+              <Button danger icon={<DeleteOutlined />} />
+            </Popconfirm>
+          )}
+        </Space>
       ),
     },
   ];
@@ -178,44 +289,149 @@ function MagazineTable() {
         pagination={{ pageSize: 10 }}
       />
 
+      {/* Magazine Details Modal */}
       <Modal
         title="Magazine Details"
         visible={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
         footer={null}
-        width={700}
+        width={800}
       >
         {selectedMagazine && (
           <>
             <Image
               width="100%"
+              height={300}
               src={selectedMagazine.magazineThumbnail}
               alt="Magazine Thumbnail"
+              style={{ marginBottom: 20 }}
             />
-            <Title level={4}>{selectedMagazine.title}</Title>
-            <Text type="secondary">
-              Edition: {selectedMagazine.editionNumber}
-            </Text>
-            <br />
-            <Text type="secondary">
-              Published on:{" "}
-              {new Date(selectedMagazine.createdTime).toLocaleDateString()}
-            </Text>
-            <br />
-            <Text strong style={{ display: "block", marginTop: 10 }}>
-              Description:
-            </Text>
-            <Text>{selectedMagazine.description}</Text>
-            <br />
-            <Text type="secondary">
-              <a
-                href={selectedMagazine.magazinePdf}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                View PDF
-              </a>
-            </Text>
+            <Descriptions bordered column={1}>
+              <Descriptions.Item label="Title">
+                {selectedMagazine.title}
+              </Descriptions.Item>
+              <Descriptions.Item label="Edition Number">
+                {selectedMagazine.editionNumber || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Published Date">
+                {new Date(selectedMagazine.createdTime).toLocaleDateString()}
+              </Descriptions.Item>
+              <Descriptions.Item label="Status">
+                <Tag
+                  color={
+                    selectedMagazine.status === "approved" ? "green" : "orange"
+                  }
+                >
+                  {selectedMagazine.status.toUpperCase()}
+                </Tag>
+              </Descriptions.Item>
+
+              <Descriptions.Item label="Published month">
+                {selectedMagazine.publishedMonth || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Published year">
+                {selectedMagazine.publishedYear || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Created By">
+                {selectedMagazine.createdBy?.displayName || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="PDF Link">
+                <a
+                  href={selectedMagazine.magazinePdf}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  View PDF
+                </a>
+              </Descriptions.Item>
+              <Descriptions.Item label="Description">
+                {selectedMagazine.description}
+              </Descriptions.Item>
+              <Descriptions.Item label="Kannada Description">
+                {selectedMagazine.kannada?.description || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Hindi Description">
+                {selectedMagazine.hindi?.description || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="English Description">
+                {selectedMagazine.english?.description || "N/A"}
+              </Descriptions.Item>
+            </Descriptions>
+          </>
+        )}
+      </Modal>
+
+      {/* Approval Modal */}
+      <Modal
+        title="Approve Magazine"
+        visible={isApprovalModalVisible}
+        onOk={handleApprove}
+        onCancel={() => setIsApprovalModalVisible(false)}
+        confirmLoading={approving}
+        width={800}
+        okText="Approve"
+        cancelText="Cancel"
+      >
+        {selectedMagazine && (
+          <>
+            <Image
+              width="100%"
+              height={300}
+              src={selectedMagazine.magazineThumbnail}
+              alt="Magazine Thumbnail"
+              style={{ marginBottom: 20 }}
+            />
+            <Descriptions bordered column={1}>
+              <Descriptions.Item label="Title">
+                {selectedMagazine.title}
+              </Descriptions.Item>
+              <Descriptions.Item label="Edition Number">
+                {selectedMagazine.editionNumber || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Published Date">
+                {new Date(selectedMagazine.createdTime).toLocaleDateString()}
+              </Descriptions.Item>
+              <Descriptions.Item label="Magazine Type">
+                {selectedMagazine.magazineType === "magazine"
+                  ? "Vartha janapada"
+                  : selectedMagazine.magazineType === "magazine2"
+                  ? "March of Karnataka"
+                  : selectedMagazine.magazineType || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Status">
+                <Tag
+                  color={
+                    selectedMagazine.status === "approved" ? "green" : "orange"
+                  }
+                >
+                  {selectedMagazine.status.toUpperCase()}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Created By">
+                {selectedMagazine.createdBy?.displayName || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="PDF Link">
+                <a
+                  href={selectedMagazine.magazinePdf}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  View PDF
+                </a>
+              </Descriptions.Item>
+              <Descriptions.Item label="Description">
+                {selectedMagazine.description || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Kannada Description">
+                {selectedMagazine.kannada?.description || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Hindi Description">
+                {selectedMagazine.hindi?.description || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="English Description">
+                {selectedMagazine.english?.description || "N/A"}
+              </Descriptions.Item>
+            </Descriptions>
           </>
         )}
       </Modal>

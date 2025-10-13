@@ -1,15 +1,32 @@
 import React, { useEffect, useState } from "react";
-import { Table, Button, Popconfirm, message, Image, Space } from "antd";
-import { EyeOutlined, DeleteOutlined } from "@ant-design/icons";
-import { getBanners, deleteBanner } from "../../service/Banner/BannersService"; // Import the functions
+import { 
+  Table, 
+  Button, 
+  Popconfirm, 
+  message, 
+  Image, 
+  Space, 
+  Tag, 
+  Modal,
+  Typography,
+  Descriptions 
+} from "antd";
+import { EyeOutlined, DeleteOutlined, CheckOutlined, EditOutlined } from "@ant-design/icons";
+import { getBanners, deleteBanner, approveBanner } from "../../service/Banner/BannersService";
 import { useNavigate } from "react-router-dom";
+
+const { Title, Text } = Typography;
 
 function BannersTable() {
   const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedBanner, setSelectedBanner] = useState(null);
+  const [approvalModalVisible, setApprovalModalVisible] = useState(false);
+  const [viewModalVisible, setViewModalVisible] = useState(false);
+  const [approving, setApproving] = useState(false);
   const navigate = useNavigate();
+  const role = localStorage.getItem("role");
 
-  // Fetch banners when the component mounts
   useEffect(() => {
     fetchBanners();
   }, []);
@@ -17,11 +34,10 @@ function BannersTable() {
   const fetchBanners = async () => {
     try {
       const response = await getBanners();
-      console.log(response); // Log the API response for debugging
+      // console.log("Banner table response get all banners", response);
 
-      // Check if response contains data and update state
       if (response && Array.isArray(response)) {
-        setBanners(response); // Assuming response is directly the array of banners
+        setBanners(response);
       } else {
         message.error("Failed to load banners");
       }
@@ -32,16 +48,12 @@ function BannersTable() {
       setLoading(false);
     }
   };
+
   const handleDelete = async (id) => {
     try {
-      // Make the delete API call
       const response = await deleteBanner(id);
-
-      // If the response message is "Banner deleted successfully"
       if (response && response.message === "Banner deleted successfully") {
         message.success("Banner deleted successfully!");
-
-        // Update the banners state to remove the deleted banner
         setBanners(banners.filter((banner) => banner._id !== id));
       } else {
         message.error("Failed to delete banner");
@@ -52,8 +64,45 @@ function BannersTable() {
     }
   };
 
-  const handleView = (bannerId) => {
-    navigate(`/view-banner/${bannerId}`); // Navigate to the view page for the banner
+  const handleView = (banner) => {
+    setSelectedBanner(banner);
+    setViewModalVisible(true);
+  };
+
+  const handleEdit = (banner) => {
+    navigate(`/banners/edit/${banner._id}`);
+  };
+
+  const handleApproveClick = (banner) => {
+    setSelectedBanner(banner);
+    setApprovalModalVisible(true);
+  };
+
+  const handleApprove = async () => {
+    if (!selectedBanner) return;
+    
+    setApproving(true);
+    try {
+      const response = await approveBanner({
+        id: selectedBanner._id,
+        createdBy: selectedBanner.createdBy?._id || localStorage.getItem("userId")
+      });
+      
+      if (response && response.success) {
+        message.success("Banner approved successfully!");
+        setBanners(banners.map(banner => 
+          banner._id === selectedBanner._id ? { ...banner, status: "approved" } : banner
+        ));
+        setApprovalModalVisible(false);
+      } else {
+        message.error(response?.message || "Failed to approve banner");
+      }
+    } catch (error) {
+      message.error("Error approving banner");
+      console.error("Error approving banner:", error);
+    } finally {
+      setApproving(false);
+    }
   };
 
   const columns = [
@@ -74,12 +123,32 @@ function BannersTable() {
       dataIndex: "description",
       key: "description",
       render: (text) => text || "No description",
+      ellipsis: true,
     },
     {
-      title: "Created Time",
-      dataIndex: "createdTime",
-      key: "createdTime",
-      render: (text) => new Date(text).toLocaleString(),
+      title: "Created By",
+      dataIndex: "createdBy",
+      key: "createdBy",
+      render: (_, record) => (
+        <span>{record.createdBy?.displayName || "Unknown"}</span>
+      )
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      render: (status, record) => (
+        <Tag 
+          color={status === "approved" ? "green" : "orange"}
+          style={{ cursor: role === "admin" && status !== "approved" ? "pointer" : "default" }}
+          onClick={() => role === "admin" && status !== "approved" && handleApproveClick(record)}
+        >
+          {status}
+          {role === "admin" && status !== "approved" && (
+            <span style={{ marginLeft: 5 }}><CheckOutlined /></span>
+          )}
+        </Tag>
+      ),
     },
     {
       title: "Actions",
@@ -89,16 +158,25 @@ function BannersTable() {
           <Button
             type="default"
             icon={<EyeOutlined />}
-            onClick={() => handleView(record._id)}
+            onClick={() => handleView(record)}
           />
-          <Popconfirm
-            title="Are you sure to delete this banner?"
-            onConfirm={() => handleDelete(record._id)}
-            okText="Yes"
-            cancelText="No"
-          >
-            <Button type="danger" icon={<DeleteOutlined />} />
-          </Popconfirm>
+          {(role === "admin" || role === "moderator") && (
+            <Button
+              type="primary"
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(record)}
+            />
+          )}
+          {(role === "admin" || (role === "moderator" && record.createdBy?._id === localStorage.getItem("userId"))) && (
+            <Popconfirm
+              title="Are you sure to delete this banner?"
+              onConfirm={() => handleDelete(record._id)}
+              okText="Yes"
+              cancelText="No"
+            >
+              <Button danger icon={<DeleteOutlined />} />
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -111,8 +189,90 @@ function BannersTable() {
         dataSource={banners}
         loading={loading}
         rowKey="_id"
-        pagination={{ pageSize: 10 }} // You can adjust the number of items per page
+        pagination={{ pageSize: 10 }}
       />
+
+      {/* View Banner Modal */}
+      <Modal
+        title="Banner Details"
+        visible={viewModalVisible}
+        onCancel={() => setViewModalVisible(false)}
+        footer={null}
+        width={700}
+      >
+        {selectedBanner && (
+          <div>
+            <Image
+              width="100%"
+              src={selectedBanner.bannerImage}
+              alt="Banner"
+              style={{ marginBottom: 20 }}
+            />
+            <Descriptions bordered column={1}>
+              <Descriptions.Item label="Title">
+                {selectedBanner.title || "No title"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Description">
+                {selectedBanner.description || "No description"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Status">
+                <Tag color={selectedBanner.status === "approved" ? "green" : "orange"}>
+                  {selectedBanner.status}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Created By">
+                {selectedBanner.createdBy?.displayName || "Unknown"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Created At">
+                {new Date(selectedBanner.createdAt).toLocaleString()}
+              </Descriptions.Item>
+            </Descriptions>
+          </div>
+        )}
+      </Modal>
+
+      {/* Approval Modal */}
+      <Modal
+        title="Approve Banner"
+        visible={approvalModalVisible}
+        onOk={handleApprove}
+        onCancel={() => setApprovalModalVisible(false)}
+        confirmLoading={approving}
+        okText="Approve"
+        cancelText="Cancel"
+        width={700}
+      >
+        {selectedBanner && (
+          <>
+            <Image
+              width="100%"
+              src={selectedBanner.bannerImage}
+              alt="Banner to approve"
+              style={{ marginBottom: 20 }}
+            />
+
+            <Descriptions bordered column={1} size="middle">
+              <Descriptions.Item label="Title">
+                {selectedBanner.title || "No title"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Description">
+                {selectedBanner.description || "No description"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Status">
+                <Tag color={selectedBanner.status === "approved" ? "green" : "orange"}>
+                  {selectedBanner.status}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Created By">
+                {selectedBanner.createdBy?.displayName || "Unknown"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Created At">
+                {new Date(selectedBanner.createdAt).toLocaleString()}
+              </Descriptions.Item>
+            </Descriptions>
+          </>
+        )}
+      </Modal>
     </div>
   );
 }

@@ -13,7 +13,8 @@ const BaseLayout = () => {
       <Sider
         width={260}
         style={{
-          backgroundColor: "#2c3e50",
+          // backgroundColor: "#2c3e50",
+           backgroundColor: "#fff",
           position: "fixed",
           top: 0,
           left: 0,

@@ -18,13 +18,13 @@ function MagazinesPage() {
   const navigate = useNavigate();
 
   const handleAddArticleClick = () => {
-    navigate("/add-Magazine");
+    navigate("/add-Magazine2");
   };
 
   return (
     <MagazineWrapper>
       <div className="header-section">
-        <div className="block-title">Magazines</div>
+        <div className="block-title">March of karnataka</div>
         <Button
           type="primary"
           icon={<PlusOutlined />}

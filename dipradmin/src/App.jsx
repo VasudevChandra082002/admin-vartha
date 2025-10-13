@@ -16,7 +16,7 @@ import AddArticlePage from "./screens/articles/AddArticlePage";
 import EditArticlesPage from "./screens/articles/EditArticlesPage";
 import MagazinesPage from "./screens/magazines/MagazinesPage";
 import AddMagazinePage from "./screens/magazines/AddMagazines";
-import UpdateMagazinePage from "./screens/magazines/EditMagazine";
+import UpdateMagazinePage from "./screens/magazines/EditMagazine2.jsx";
 import BannersPage from "./screens/banners/BannersPage";
 import ShortVideosPage from "./screens/shortVideos/ShortVideos";
 import AddVideoPage from "./screens/shortVideos/addShortvideos";
@@ -30,26 +30,45 @@ import Notifications from "./screens/notifications/Notifications.jsx";
 import CategoryPage from "./screens/category/categoryPage.jsx";
 import MagazinesPage2 from "./screens/magazines2/MagazinesPage2.jsx";
 import AddMagazinePage2 from "./screens/magazines2/AddMagazine2.jsx";
-import UpdateMagazinePage2 from "./screens/magazines/EditMagazine";
+import UpdateMagazinePage2 from "./screens/magazines/EditMagazine2.jsx";
+// import UpdateMagazinePage1 from "./screens/magazines/EditMagazine2.jsx";
+import ArticleHistoryPage from "./screens/articles/ArticleHistoryPage.jsx";
+import MagazineHistoryPage2 from "./screens/magazines2/MagazineHistoryPage2.jsx";
+import UpdateMagazinePage1 from "./screens/magazines2/EditMagazine1.jsx";
+import MagazineHistoryPage from "./screens/magazines/MagazineHistoryPage1.jsx";
+import EditShortVideo from "./screens/shortVideos/EditShortVideo.jsx";
+import ShortVideoHistoryPage from "./screens/shortVideos/ShortVideoHistory.jsx";
+import EditLongVideos from "./screens/longVideos/EditLongVideos.jsx";
+import LongVideoHistoryPage from "./screens/longVideos/LongVideoHistory.jsx";
+import AddBannerPage from "./screens/banners/AddBanner.jsx";
+import EditBannerPage from "./screens/banners/EditBanner.jsx";
+import PhtotosPage from "./screens/photos/Photos.jsx";
+import AddPhotos from "./screens/photos/Addphotos.jsx";
+import StaticPage from "./screens/static/Static.jsx";
+import AddStaticPage from "./screens/static/addStatic.jsx";
+import AddCategory from "./screens/category/AddCategory.jsx";
+
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [role, setRole] = useState(null);
 
   useEffect(() => {
-    // Get the role from cookies
-    const storedRole = Cookies.get("role");
-    console.log("Stored Role from Cookies:", storedRole); // Log the stored role
-    if (storedRole) {
+    // Get the role from localStorage instead of cookies
+    const storedRole = localStorage.getItem("role");
+    const token = localStorage.getItem("token");
+    // console.log("Token from localStorage:", token);
+    // console.log("Stored Role from localStorage:", storedRole);
+    if (storedRole && token) {
       setRole(storedRole);
-      setIsAuthenticated(true); // Set authenticated state based on role
+      setIsAuthenticated(true);
     }
   }, []);
 
   const handleLogin = () => {
     setIsAuthenticated(true);
-    const storedRole = Cookies.get("role");
-    console.log("Role after login:", storedRole); // Log the role after login
+    const storedRole = localStorage.getItem("role");
+    // console.log("Role after login:", storedRole);
     setRole(storedRole);
   };
 
@@ -113,16 +132,20 @@ function App() {
                 </PrivateRoute>
               }
             />
+
+            {/* March of karnartaka */}
             <Route
-              path="/manage-magazines1"
+              path="/manage-marchofkarnataka"
               element={
                 <PrivateRoute>
                   <MagazinesPage />
                 </PrivateRoute>
               }
             />
+
+            {/* Vartha janapada */}
             <Route
-              path="/manage-magazines2"
+              path="/manage-varthajanapada"
               element={
                 <PrivateRoute>
                   <MagazinesPage2 />
@@ -137,8 +160,27 @@ function App() {
                 </PrivateRoute>
               }
             />
+
             <Route
-              path="/add-magazine"
+              path="/banners/add"
+              element={
+                <PrivateRoute>
+                  <AddBannerPage />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/banners/edit/:id"
+              element={
+                <PrivateRoute>
+                  <EditBannerPage />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/add-varthajanapada"
               element={
                 <PrivateRoute>
                   <AddMagazinePage />
@@ -193,6 +235,26 @@ function App() {
                 </PrivateRoute>
               }
             />
+
+            <Route
+              path="/edit-long-video/:videoId"
+              element={
+                <PrivateRoute>
+                  <EditLongVideos />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/long-video-history/:videoId"
+              element={
+                <PrivateRoute>
+                  {" "}
+                  <LongVideoHistoryPage />
+                </PrivateRoute>
+              }
+            />
+
             <Route
               path="/add-shortVideos"
               element={
@@ -201,6 +263,23 @@ function App() {
                 </PrivateRoute>
               }
             />
+            <Route
+              path="/edit-short-video/:videoId"
+              element={
+                <PrivateRoute>
+                  <EditShortVideo />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/short-video-history/:videoId"
+              element={
+                <PrivateRoute>
+                  <ShortVideoHistoryPage />
+                </PrivateRoute>
+              }
+            />
+
             <Route
               path="/manage-moderation"
               element={
@@ -217,19 +296,97 @@ function App() {
                 </PrivateRoute>
               }
             />
+
             <Route
-              path="/edit-magazine/:magazineId"
+              path="/article-history/:articleId"
               element={
                 <PrivateRoute>
-                  <UpdateMagazinePage />
+                  <ArticleHistoryPage />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/edit-varthajanapada/:magazineId"
+              element={
+                <PrivateRoute>
+                  <UpdateMagazinePage1 />
                 </PrivateRoute>
               }
             />
             <Route
-              path="/edit-magazine2/:magazineId"
+              path="/varthajanapada-history/:magazineId"
+              element={
+                <PrivateRoute>
+                  <MagazineHistoryPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/edit-marchofkarnataka/:magazineId"
               element={
                 <PrivateRoute>
                   <UpdateMagazinePage2 />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/manage-photos"
+              element={
+                <PrivateRoute>
+                  <PhtotosPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/manage-photos/addphotos"
+              element={
+                <PrivateRoute>
+                  <AddPhotos />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/magazine2-history/:magazineId"
+              element={
+                <PrivateRoute>
+                  <MagazineHistoryPage2 />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/website-pages"
+              element={
+                <PrivateRoute>
+                  <StaticPage />
+                </PrivateRoute>
+              }
+            />
+             <Route
+              path="/website-pages/addpages"
+              element={
+                <PrivateRoute>
+                  <AddStaticPage />
+                </PrivateRoute>
+              }
+            />
+
+             <Route
+              path="/category"
+              element={
+                <PrivateRoute>
+                  <CategoryPage />
+                </PrivateRoute>
+              }
+            />
+
+              <Route
+              path="/category/add"
+              element={
+                <PrivateRoute>
+                  <AddCategory/>
                 </PrivateRoute>
               }
             />
