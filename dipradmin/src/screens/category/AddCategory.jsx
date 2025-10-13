@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Form, Input, Button, Card, message, Select } from "antd";
-import { addCategory } from "../../service/Category/CategoryService"; // ✅ your API
+import { addCategory } from "../../service/category/categoryservice";
+
 const { TextArea } = Input;
 const { Option } = Select;
 
