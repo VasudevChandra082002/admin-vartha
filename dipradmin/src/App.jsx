@@ -47,7 +47,8 @@ import AddPhotos from "./screens/photos/Addphotos.jsx";
 import StaticPage from "./screens/static/Static.jsx";
 import AddStaticPage from "./screens/static/addStatic.jsx";
 import AddCategory from "./screens/category/AddCategory.jsx";
-
+import LatestNotification from "./screens/latestnotifications/LatestNotification.jsx";
+import AddLatestNotification from "./screens/latestnotifications/AddlatestNotification.jsx";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -364,7 +365,7 @@ function App() {
                 </PrivateRoute>
               }
             />
-             <Route
+            <Route
               path="/website-pages/addpages"
               element={
                 <PrivateRoute>
@@ -373,7 +374,7 @@ function App() {
               }
             />
 
-             <Route
+            <Route
               path="/category"
               element={
                 <PrivateRoute>
@@ -382,15 +383,36 @@ function App() {
               }
             />
 
-              <Route
+            <Route
               path="/category/add"
               element={
                 <PrivateRoute>
-                  <AddCategory/>
+                  <AddCategory />
                 </PrivateRoute>
               }
             />
+
+             <Route
+              path="/latestnotification"
+              element={
+                <PrivateRoute>
+                  <LatestNotification />
+                </PrivateRoute>
+              }
+            />
+  <Route
+              path="/latestnotification/add"
+              element={
+                <PrivateRoute>
+                  <AddLatestNotification />
+                </PrivateRoute>
+              }
+            />
+
+
           </Route>
+
+          
         </Routes>
       </Router>
     </ThemeProvider>
