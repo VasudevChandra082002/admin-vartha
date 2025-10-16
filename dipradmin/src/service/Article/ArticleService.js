@@ -1,4 +1,9 @@
+import { message } from "antd";
+
 const BASE_URL = import.meta.env.VITE_BASE_URL;
+// ArticleService.js
+const LLM_URL = import.meta.env.VITE_LLM_API_URL;  // <- not LLM_API_URL
+
 
 export const getArticles = async () => {
   try {
@@ -38,7 +43,7 @@ export const deleteArticle = async (articleId) => {
 export const createArticle = async (articleData) => {
   try {
     const token = localStorage.getItem("token");
-    const response = await fetch(`${BASE_URL}/api/news/createNews`, {
+    const response = await fetch(`${LLM_URL}/api/create`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -47,6 +52,7 @@ export const createArticle = async (articleData) => {
       body: JSON.stringify(articleData),
     });
     return await response.json();
+
   } catch (error) {
     message.error("Error creating article.");
     throw error;

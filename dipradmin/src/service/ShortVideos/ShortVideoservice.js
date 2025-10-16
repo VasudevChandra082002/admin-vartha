@@ -1,4 +1,5 @@
 const BASE_URL = import.meta.env.VITE_BASE_URL;
+const LLM_URL = import.meta.env.VITE_LLM_API_URL; 
 
 export const getShortVideos = async () => {
   try {
@@ -34,7 +35,7 @@ export const deleteById = async (videoId) => {
 export const createVideo = async (videoData) => {
   try {
     const token = localStorage.getItem("token");
-    const response = await fetch(`${BASE_URL}/api/video/upload`, {
+    const response = await fetch(`${LLM_URL}/api/shortvideos/create`, {
       method: "POST",
       headers: { "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
@@ -87,7 +88,7 @@ export const getVideoById = async (videoId) => {
 export const updatevideoById = async (videoId, videoData) => {
   try {
     const token = localStorage.getItem("token");
-    const response = await fetch(`${BASE_URL}/api/video/update/${videoId}`, {
+    const response = await fetch(`${LLM_URL}/api/shortvideos/${videoId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,

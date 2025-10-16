@@ -3,53 +3,57 @@ import { Table, Input, Button, Space, message, Modal } from "antd";
 import {
   getAllComments,
   deleteComment,
-} from "../../service/Comments/CommentService"; // assuming the functions are in services
-import {
-  SearchOutlined,
-  DeleteOutlined,
-  EditOutlined,
-} from "@ant-design/icons";
+} from "../../service/Comments/CommentService";
+import { SearchOutlined, DeleteOutlined } from "@ant-design/icons";
 
 function ModerationTable() {
   const [commentsData, setCommentsData] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState([]);
 
-  // Fetch comments from the API
+  // Fetch comments from API
   useEffect(() => {
     const fetchComments = async () => {
       try {
         const response = await getAllComments();
-        // console.log("API response:", response);
+        console.log("API response:", response);
         if (response.success) {
           const transformedData = response.data.map((comment) => ({
             key: comment._id,
-            user: comment.user?.displayName,
+            user:
+              comment.user?.displayName ||
+              comment.user?.email ||
+              "Anonymous",
             comment: comment.comment,
             createdTime: new Date(comment.createdTime).toLocaleString(),
             videoTitle: comment.video ? comment.video.title : "N/A",
             newsTitle: comment.news ? comment.news.title : "N/A",
           }));
+
           setCommentsData(transformedData);
-          setFilteredData(transformedData); // Initially set all data as filtered
+          setFilteredData(transformedData);
         }
       } catch (error) {
         console.error("Error fetching comments:", error);
+        message.error("Failed to fetch comments.");
       }
     };
 
     fetchComments();
   }, []);
 
-  // Search function
-  const handleSearch = () => {
+  // 🔍 Auto filter comments as user types
+  useEffect(() => {
     const filtered = commentsData.filter((comment) =>
-      comment.comment.toLowerCase().includes(searchText.toLowerCase())
+      [comment.comment, comment.user, comment.newsTitle, comment.videoTitle]
+        .some((field) =>
+          field?.toLowerCase().includes(searchText.toLowerCase())
+        )
     );
     setFilteredData(filtered);
-  };
+  }, [searchText, commentsData]);
 
-  // Delete comment handler with confirmation
+  // 🗑️ Delete comment with confirmation
   const handleDelete = (commentId) => {
     Modal.confirm({
       title: "Are you sure you want to delete this comment?",
@@ -61,17 +65,13 @@ function ModerationTable() {
         try {
           const response = await deleteComment(commentId);
           if (response.success) {
-            // Remove the deleted comment from the filteredData and commentsData
-            const newFilteredData = filteredData.filter(
+            const updated = filteredData.filter(
               (comment) => comment.key !== commentId
             );
-            setFilteredData(newFilteredData);
-
-            const newCommentsData = commentsData.filter(
-              (comment) => comment.key !== commentId
+            setFilteredData(updated);
+            setCommentsData(
+              commentsData.filter((comment) => comment.key !== commentId)
             );
-            setCommentsData(newCommentsData);
-
             message.success("Comment deleted successfully!");
           } else {
             message.error("Failed to delete the comment.");
@@ -84,12 +84,13 @@ function ModerationTable() {
     });
   };
 
-  // Columns definition for the Ant Design Table
+  // 📋 Table Columns
   const columns = [
     {
       title: "User",
       dataIndex: "user",
       key: "user",
+      render: (text) => <span>{text || "Anonymous"}</span>,
     },
     {
       title: "Comment",
@@ -97,66 +98,56 @@ function ModerationTable() {
       key: "comment",
       render: (text) => <span>{text}</span>,
     },
-    {
-      title: "Created Time",
-      dataIndex: "createdTime",
-      key: "createdTime",
-    },
-    {
-      title: "Video",
-      dataIndex: "videoTitle",
-      key: "videoTitle",
-    },
+   
+    // {
+    //   title: "Video",
+    //   dataIndex: "videoTitle",
+    //   key: "videoTitle",
+    // },
     {
       title: "News",
       dataIndex: "newsTitle",
       key: "newsTitle",
+    },
+     {
+      title: "Created Time",
+      dataIndex: "createdTime",
+      key: "createdTime",
     },
     {
       title: "Actions",
       key: "actions",
       render: (_, record) => (
         <Space size="middle">
-          {/* <Button
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record.key)}
-          /> */}
           <Button
-          danger
+            danger
             icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record.key)} // Call delete handler
+            onClick={() => handleDelete(record.key)}
           />
         </Space>
       ),
     },
   ];
 
-  // Edit comment handler (for demonstration)
-  const handleEdit = (key) => {
-    // console.log("Edit comment with key:", key);
-    // Add edit functionality here
-  };
-
   return (
     <div>
+      {/* 🔎 Search Bar */}
       <Space style={{ marginBottom: 16 }}>
         <Input
-          placeholder="Search comments"
+          placeholder="Search by user, comment, news, or video"
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
-          onPressEnter={handleSearch}
           allowClear
+          prefix={<SearchOutlined />}
+          style={{ width: 300 }}
         />
-        <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
-          Search
-        </Button>
       </Space>
+
+      {/* 🧾 Comments Table */}
       <Table
         columns={columns}
         dataSource={filteredData}
-        pagination={{
-          pageSize: 10, // Display 10 items per page
-        }}
+        pagination={{ pageSize: 10 }}
         bordered
       />
     </div>

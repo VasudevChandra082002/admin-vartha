@@ -1,59 +1,106 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, Card, Input, Form, message } from "antd";
-import { LinkOutlined } from "@ant-design/icons";
+import {
+  Button,
+  Card,
+  Input,
+  Form,
+  message,
+  Upload,
+  Typography,
+} from "antd";
+import { LinkOutlined, UploadOutlined } from "@ant-design/icons";
 import { createStatic } from "../../service/Static/StaticService";
+import { uploadFileToAzureStorage } from "../../config/azurestorageservice";
+
+const { Text } = Typography;
 
 function AddStaticPage() {
   const [form] = Form.useForm();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+
+  const [submitting, setSubmitting] = useState(false);
   const [link, setLink] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+
+  const handleImageUpload = async ({ file }) => {
+    if (!file.type?.startsWith("image/")) {
+      message.error("Only image files are allowed!");
+      return false;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      message.error("Image must be smaller than 5MB!");
+      return false;
+    }
+
+    setUploading(true);
+    try {
+      // 👇 Upload to Azure container: website
+      const res = await uploadFileToAzureStorage(file, "website");
+      if (res?.blobUrl) {
+        setImageUrl(res.blobUrl);
+        message.success("Image uploaded successfully!");
+      } else {
+        message.error("Failed to upload image.");
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
+      message.error("Error uploading image to Azure.");
+    } finally {
+      setUploading(false);
+    }
+
+    return false; // prevent AntD auto-upload
+  };
 
   const handleFormSubmit = async (values) => {
     if (!values.staticpageLink) {
       message.error("Please enter a link before submitting.");
       return;
     }
+    if (!imageUrl) {
+      message.error("Please upload a page image before submitting.");
+      return;
+    }
 
-    setLoading(true);
+    setSubmitting(true);
     try {
-      const staticData = { 
+      const payload = {
         staticpageLink: values.staticpageLink,
-        staticpageName: values.staticpageName || "Untitled Page"
+        staticpageName: values.staticpageName || "Untitled Page",
+        staticpageImage: imageUrl, // 👈 include uploaded image
       };
-      
-      const response = await createStatic(staticData);
-      console.log("Static page creation response:", response);
-      
+
+      const response = await createStatic(payload);
+
       if (response && (response._id || response.success)) {
-        message.success("Static page created successfully!");
+        message.success("Website added successfully!");
         const status = response.data?.status || response.status || "pending";
         if (status === "pending") {
           message.info("Your static page is pending approval from admin.");
         }
+        form.resetFields();
+        setImageUrl("");
+        setLink("");
         navigate("/website-pages");
       } else {
-        message.error("Failed to create static page.");
+        message.error(response?.message || "Failed to create static page.");
       }
     } catch (error) {
-      message.error("Error creating static page.");
       console.error(error);
+      message.error("Error creating static page.");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  const handleLinkChange = (e) => {
-    setLink(e.target.value);
-  };
+  const handleLinkChange = (e) => setLink(e.target.value);
 
-  const handlePreview = () => {
-    if (link) {
-      window.open(link, '_blank', 'noopener,noreferrer');
-    } else {
-      message.warning("Please enter a link first.");
-    }
+  const onReset = () => {
+    form.resetFields();
+    setLink("");
+    setImageUrl("");
   };
 
   return (
@@ -63,108 +110,107 @@ function AddStaticPage() {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        padding: "20px",
+        padding: 20,
         backgroundColor: "#f5f5f5",
       }}
     >
-      <Card
-        title="Add New Static Page"
-        style={{
-          width: "500px",
-        }}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleFormSubmit}
-        >
-          {/* Page Name Field */}
+      <Card title="Add New Static Page" style={{ width: 520 }}>
+        <Form form={form} layout="vertical" onFinish={handleFormSubmit}>
+          {/* Page Name */}
           <Form.Item
             label="Page Name"
             name="staticpageName"
             rules={[
               { required: true, message: "Please enter a page name!" },
-              { min: 2, message: "Page name must be at least 2 characters!" }
+              { min: 2, message: "Page name must be at least 2 characters!" },
             ]}
           >
-            <Input 
-              placeholder="Enter page name" 
-              size="large"
-            />
+            <Input placeholder="Enter page name" size="large" />
           </Form.Item>
 
-          {/* Link Input Field */}
+          {/* Page Link */}
           <Form.Item
             label="Page Link"
             name="staticpageLink"
             rules={[
               { required: true, message: "Please enter a link!" },
-              { type: 'url', message: 'Please enter a valid URL!' }
+              { type: "url", message: "Please enter a valid URL!" },
             ]}
           >
-            <Input 
-              placeholder="https://example.com" 
+            <Input
+              placeholder="https://example.com"
               size="large"
               onChange={handleLinkChange}
               prefix={<LinkOutlined />}
             />
           </Form.Item>
 
-          {/* Preview Area */}
-          {/* <div
+          {/* Image Preview */}
+          <div
             style={{
               width: "100%",
-              height: "100px",
+              height: 240,
               border: "1px dashed #d9d9d9",
-              borderRadius: "8px",
+              borderRadius: 10,
               display: "flex",
-              flexDirection: "column",
               justifyContent: "center",
               alignItems: "center",
-              marginBottom: "20px",
-              backgroundColor: "#fafafa",
-              padding: "16px",
+              overflow: "hidden",
+              marginBottom: 12,
+              background: "#fafafa",
             }}
-           >
-            {link ? (
-              <div style={{ textAlign: 'center' }}>
-                <Button 
-                  type="link" 
-                  icon={<LinkOutlined />}
-                  onClick={handlePreview}
-                  style={{ padding: 0, height: 'auto' }}
-                >
-                  {link}
-                </Button>
-                <div style={{ marginTop: '8px' }}>
-                  <Button 
-                    size="small" 
-                    type="primary" 
-                    ghost
-                    onClick={handlePreview}
-                  >
-                    Preview Link
-                  </Button>
-                </div>
-              </div>
+          >
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt="Static page"
+                style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
+              />
             ) : (
-              <span style={{ color: "#999" }}>No link entered</span>
+              <Text type="secondary">No image uploaded</Text>
             )}
-          </div> */}
+          </div>
 
-          {/* Submit Button */}
-          <Form.Item style={{ marginBottom: 0 }}>
+          {/* Image Upload */}
+          <Upload
+            customRequest={handleImageUpload}
+            showUploadList={false}
+            accept="image/*"
+            disabled={uploading || submitting}
+          >
+            <Button
+              icon={<UploadOutlined />}
+              block
+              loading={uploading}
+              style={{ marginBottom: 16 }}
+            >
+              {uploading ? "Uploading..." : "Upload Page Image"}
+            </Button>
+          </Upload>
+
+          {/* Actions */}
+          <div style={{ display: "flex", gap: 8 }}>
             <Button
               type="primary"
               htmlType="submit"
               block
               size="large"
-              loading={loading}
-              disabled={!link}
+              loading={submitting}
+              disabled={!link || !imageUrl || uploading}
+              style={{ flex: 1 }}
             >
-              Create Static Page
+              {submitting ? "Creating..." : "Create Static Page"}
             </Button>
-          </Form.Item>
+            <Button
+              block
+              size="large"
+              onClick={onReset}
+              disabled={uploading || submitting}
+              style={{ flex: 1 }}
+            >
+              Reset
+            </Button>
+          </div>
         </Form>
       </Card>
     </div>

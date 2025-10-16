@@ -1,10 +1,11 @@
 const BASE_URL = import.meta.env.VITE_BASE_URL;
+const LLM_URL = import.meta.env.VITE_LLM_API_URL;
 
 export const createStatic = async(data) =>
 {
     try {
         const token = localStorage.getItem("token");
-        const response = await fetch(`${BASE_URL}/api/static/createStaticPage`, {
+        const response = await fetch(`${LLM_URL}/api/staticpages/create`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

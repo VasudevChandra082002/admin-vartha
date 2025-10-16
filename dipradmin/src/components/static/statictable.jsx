@@ -10,6 +10,7 @@ import {
   Typography,
   Descriptions,
   Tooltip,
+  Image,
 } from "antd";
 import {
   EyeOutlined,
@@ -135,6 +136,15 @@ function StaticTable() {
   };
 
   const columns = [
+
+    {
+
+      title: "Image",
+     dataIndex: "staticpageImage",
+      key: "staticpageImage",
+      render: (text) => <Image width={100} src={text} alt="Static Page" />,
+
+    },
     {
       title: "Link",
       dataIndex: "staticpageLink",
@@ -173,7 +183,7 @@ function StaticTable() {
             handleApproveClick(record)
           }
         >
-          {status}
+          {status.toUpperCase()}
           {role === "admin" && status !== "approved" && (
             <span style={{ marginLeft: 5 }}>
               <CheckOutlined />
