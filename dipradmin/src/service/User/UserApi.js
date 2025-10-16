@@ -62,6 +62,34 @@ export const createModerator = async (moderatorData) => {
   }
 };
 
+export const createAdmin = async (adminData) => {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${BASE_URL}/api/auth/create-user-with-role`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        ...adminData,
+        role: "admin" // Explicitly set the role to "moderator"
+      }),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to create admin");
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error creating admin:", error);
+    throw error;
+  }
+};
+
 
 export const getUserById = async (userId) => {
   try {
