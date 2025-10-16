@@ -140,8 +140,17 @@ import {
   BookOutlined,
   VideoCameraOutlined,
   VideoCameraAddOutlined,
+  CommentOutlined
 } from "@ant-design/icons";
-
+// import { GiNewspaper } from "react-icons/gi";
+import { FaPhotoVideo } from "react-icons/fa";
+import { RiVideoOnLine } from "react-icons/ri";
+import { RiVideoOnFill } from "react-icons/ri";
+import { MdPages } from "react-icons/md";
+import { FaRegNewspaper } from "react-icons/fa";
+import { MdOutlineWebStories } from "react-icons/md";
+import { TbCategoryFilled } from "react-icons/tb";
+import { FaRegComments  } from "react-icons/fa";
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -208,7 +217,7 @@ const Sidebar = () => {
 
         {canViewContent && (
           <>
-            <Menu.Item key="/manage-articles" icon={<FileOutlined />}>
+            <Menu.Item key="/manage-articles" icon={<FaRegNewspaper />}>
               Articles
             </Menu.Item>
             <Menu.Item key="/manage-varthajanapada" icon={<BookOutlined />}>
@@ -217,27 +226,27 @@ const Sidebar = () => {
             <Menu.Item key="/manage-marchofkarnataka" icon={<BookOutlined />}>
               March of Karnataka
             </Menu.Item>
-            <Menu.Item key="/manage-banners" icon={<BookOutlined />}>
+            <Menu.Item key="/manage-banners" icon={<MdPages />}>
               Banners
             </Menu.Item>
-            <Menu.Item key="/manage-shortvideos" icon={<VideoCameraOutlined />}>
+            <Menu.Item key="/manage-shortvideos" icon={<RiVideoOnLine />}>
               Short Videos
             </Menu.Item>
             <Menu.Item
               key="/manage-longvideo"
-              icon={<VideoCameraAddOutlined />}
+              icon={<RiVideoOnFill />}
             >
               Long Videos
             </Menu.Item>
-            <Menu.Item key="/manage-photos" icon={<VideoCameraAddOutlined />}>
+            <Menu.Item key="/manage-photos" icon={<FaPhotoVideo />}>
               Photos
             </Menu.Item>
             
-            <Menu.Item key="/website-pages" icon={<VideoCameraAddOutlined />}>
+            <Menu.Item key="/website-pages" icon={<MdOutlineWebStories />}>
               Websites
             </Menu.Item>
 
-            <Menu.Item key="/category" icon={<VideoCameraAddOutlined />}>
+            <Menu.Item key="/category" icon={<TbCategoryFilled />}>
               Category
             </Menu.Item>
             {/* <Menu.Item key="/manage-notifications" icon={<VideoCameraAddOutlined />}>
@@ -247,8 +256,8 @@ const Sidebar = () => {
         )}
 
         {isAdminOrModerator && (
-          <Menu.Item key="/manage-moderation" icon={<VideoCameraAddOutlined />}>
-            Moderation
+          <Menu.Item key="/manage-moderation" icon={<FaRegComments  />}>
+            Comments
           </Menu.Item>
         )}
 

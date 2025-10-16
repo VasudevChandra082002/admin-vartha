@@ -1,23 +1,24 @@
-// import React, { useState, useEffect } from "react";
+// import { useState } from "react";
 // import {
 //   Form,
 //   Input,
 //   Button,
-//   DatePicker,
 //   message,
 //   Upload,
 //   Card,
+//   Modal,
+//   Tag,
 //   Select,
 // } from "antd";
-// import { UploadOutlined } from "@ant-design/icons";
+// import { UploadOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
 // import { createMagazine } from "../../service/Magazine/MagazineService";
 // import { useNavigate } from "react-router-dom";
-// import { storage } from "../../service/firebaseConfig"; // Import Firebase storage
-// import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-// import { getCategories } from "../../service/categories/CategoriesApi"; // Import Category service
+
+// import { uploadFileToAzureStorage } from "../../config/azurestorageservice";
 
 // const { TextArea } = Input;
 // const { Option } = Select;
+// const { confirm } = Modal;
 
 // function AddMagazinePage() {
 //   const [form] = Form.useForm();
@@ -27,196 +28,364 @@
 //   const [pdfUploading, setPdfUploading] = useState(false);
 //   const [imageUrl, setImageUrl] = useState("");
 //   const [pdfUrl, setPdfUrl] = useState("");
-//   const [categories, setCategories] = useState([]);
-//   const [selectedCategory, setSelectedCategory] = useState(null);
+//   const userRole = localStorage.getItem("role");
 
-//   useEffect(() => {
-//     fetchCategories();
-//   }, []);
-
-//   const fetchCategories = async () => {
-//     try {
-//       const response = await getCategories();
-//       if (response.success) {
-//         setCategories(response.data);
-//       } else {
-//         message.error("Failed to load categories.");
-//       }
-//     } catch (error) {
-//       message.error("Error fetching categories.");
-//     }
-//   };
+//   // Month options
+//   const monthOptions = [
+//     { value: "January", label: "January" },
+//     { value: "February", label: "February" },
+//     { value: "March", label: "March" },
+//     { value: "April", label: "April" },
+//     { value: "May", label: "May" },
+//     { value: "June", label: "June" },
+//     { value: "July", label: "July" },
+//     { value: "August", label: "August" },
+//     { value: "September", label: "September" },
+//     { value: "October", label: "October" },
+//     { value: "November", label: "November" },
+//     { value: "December", label: "December" },
+//   ];
 
 //   const handleFormSubmit = async (values) => {
+//     if (!imageUrl || !pdfUrl) {
+//       message.error("Please upload both an image and a PDF before submitting.");
+//       return;
+//     }
+
 //     setLoading(true);
 //     try {
-//       if (!imageUrl || !pdfUrl) {
-//         message.error(
-//           "Please upload both an image and a PDF before submitting."
-//         );
-//         setLoading(false);
-//         return;
-//       }
-
 //       const payload = {
-//         ...values,
+//         title: values.title,
+//         description: values.description,
 //         magazineThumbnail: imageUrl,
 //         magazinePdf: pdfUrl,
-//         editionNumber: values.editionNumber,
+//         editionNumber: values.editionNumber.toString(),
+//         publishedMonth: values.publishedMonth,
+//         publishedYear: values.publishedYear.toString(),
 //       };
 
 //       const response = await createMagazine(payload);
+
+//       if (!response) {
+//         throw new Error("No response from server");
+//       }
+
 //       if (response.success) {
-//         message.success("Magazine added successfully!");
-//         form.resetFields();
-//         setImageUrl("");
-//         setPdfUrl("");
-//         setSelectedCategory(null);
-//         navigate("/manage-magazines1");
+//         if (userRole === "moderator") {
+//           showModeratorSuccess();
+//         } else {
+//           message.success("Magazine published successfully!");
+//           resetForm();
+//           navigate("/manage-varthajanapada");
+//         }
 //       } else {
-//         message.error("Failed to add magazine.");
+//         throw new Error(
+//           response.message || response.error || "Failed to add magazine"
+//         );
 //       }
 //     } catch (error) {
-//       message.error("Error adding magazine.");
+//       console.error("Submission error:", error);
+//       message.error(error.message);
 //     } finally {
 //       setLoading(false);
 //     }
 //   };
 
+//   const resetForm = () => {
+//     form.resetFields();
+//     setImageUrl("");
+//     setPdfUrl("");
+//   };
+
+//   const showModeratorSuccess = () => {
+//     confirm({
+//       title: "Magazine Submitted for Approval",
+//       icon: <ExclamationCircleOutlined />,
+//       content:
+//         "Your magazine has been submitted and is pending admin approval.",
+//       okText: "OK",
+//       onOk() {
+//         resetForm();
+//         navigate("/manage-varthajanapada");
+//       },
+//     });
+//   };
+
+//   // ✅ Updated: Upload image to Azure container "varthajanapada"
 //   const handleImageUpload = async ({ file }) => {
+//     if (!file.type.startsWith("image/")) {
+//       message.error("You can only upload image files!");
+//       return false;
+//     }
+//     if (file.size > 5 * 1024 * 1024) {
+//       message.error("Image must be smaller than 5MB!");
+//       return false;
+//     }
+
 //     setImageUploading(true);
-//     const storageRef = ref(storage, `magazineThumbnails/${file.name}`);
-//     const uploadTask = uploadBytesResumable(storageRef, file);
-
-//     uploadTask.on(
-//       "state_changed",
-//       (snapshot) => {
-//         // Optional: Progress tracking
-//       },
-//       (error) => {
-//         message.error("Image upload failed!");
-//         setImageUploading(false);
-//       },
-//       async () => {
-//         // Get download URL
-//         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-//         setImageUrl(downloadURL);
+//     try {
+//       const response = await uploadFileToAzureStorage(
+//         file,
+//         "varthajanapada-image"
+//       );
+//       if (response?.blobUrl) {
+//         setImageUrl(response.blobUrl);
 //         message.success("Image uploaded successfully!");
-//         setImageUploading(false);
+//       } else {
+//         message.error("Image upload failed.");
 //       }
-//     );
+//     } catch (error) {
+//       console.error("Image upload error:", error);
+//       message.error("Error uploading image to Azure.");
+//     } finally {
+//       setImageUploading(false);
+//     }
+//     return false; // Prevent AntD auto-upload
 //   };
 
-//   const handlePdfUpload = async ({ file }) => {
-//     setPdfUploading(true);
-//     const storageRef = ref(storage, `magazinePdfs/${file.name}`);
-//     const uploadTask = uploadBytesResumable(storageRef, file);
+//   // ✅ Updated: Upload PDF to Azure container "varthajanapada"
+//   // const handlePdfUpload = async ({ file }) => {
+//   //   if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+//   //     message.error("You can only upload PDF files!");
+//   //     return false;
+//   //   }
+//   //   // Optional: Add size limit (e.g., 100MB)
+//   //   if (file.size > 100 * 1024 * 1024) {
+//   //     message.error("PDF must be smaller than 100MB!");
+//   //     return false;
+//   //   }
 
-//     uploadTask.on(
-//       "state_changed",
-//       (snapshot) => {
-//         // Optional: Progress tracking
-//       },
-//       (error) => {
-//         message.error("PDF upload failed!");
-//         setPdfUploading(false);
-//       },
-//       async () => {
-//         // Get download URL
-//         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-//         setPdfUrl(downloadURL);
-//         message.success("PDF uploaded successfully!");
-//         setPdfUploading(false);
-//       }
-//     );
-//   };
+//   //   setPdfUploading(true);
+//   //   try {
+//   //     const response = await uploadFileToAzureStorage(file, "varthajanapada-pdf");
+//   //     if (response?.blobUrl) {
+//   //       setPdfUrl(response.blobUrl);
+//   //       message.success("PDF uploaded successfully!");
+//   //     } else {
+//   //       message.error("PDF upload failed.");
+//   //     }
+//   //   } catch (error) {
+//   //     console.error("PDF upload error:", error);
+//   //     message.error("Error uploading PDF to Azure.");
+//   //   } finally {
+//   //     setPdfUploading(false);
+//   //   }
+//   //   return false; // Prevent AntD auto-upload
+//   // };
+
+//   // In AddMagazinePage.jsx, replace your current handlePdfUpload with:
+//   // In AddMagazinePage.jsx
+//   // AddMagazinePage.jsx
+//  const handlePdfUpload = async ({ file }) => {
+//   if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+//     message.error("You can only upload PDF files!");
+//     return false;
+//   }
+//   if (file.size > 100 * 1024 * 1024) {
+//     message.error("PDF must be smaller than 100MB!");
+//     return false;
+//   }
+
+//   const rawYear = form.getFieldValue("publishedYear");
+//   const rawMonth = form.getFieldValue("publishedMonth");
+
+//   // Convert to string and validate
+//   const year = String(rawYear).trim();
+//   const month = String(rawMonth).trim();
+
+//   if (!year || year.length !== 4 || isNaN(Number(year))) {
+//     message.warning("Please enter a valid 4-digit published year.");
+//     return false;
+//   }
+//   if (!month) {
+//     message.warning("Please select a published month.");
+//     return false;
+//   }
+
+//   // Use exact month name as folder (e.g., "January")
+//   const prefix = `${year}/${month}/`;
+//   console.log("[PDF UPLOAD] Using prefix:", prefix); // 🔍 DEBUG
+
+//   setPdfUploading(true);
+//   try {
+//     const resp = await uploadFileToAzureStorage(file, "magazine-pdfs", prefix);
+//     if (resp?.blobUrl) {
+//       setPdfUrl(resp.blobUrl);
+//       message.success("PDF uploaded successfully!");
+//     } else {
+//       message.error("PDF upload failed.");
+//     }
+//   } catch (e) {
+//     console.error("PDF upload error:", e);
+//     message.error("Error uploading PDF.");
+//   } finally {
+//     setPdfUploading(false);
+//   }
+//   return false;
+// };
 
 //   return (
-//     <div>
-//       <h1>Add New Magazine</h1>
+//     <div style={{ padding: "24px", maxWidth: "80vw", margin: "0 auto" }}>
 //       <div
 //         style={{
-//           maxWidth: "80vw",
-//           margin: "auto",
-//           padding: "20px",
 //           display: "flex",
-//           gap: "20px",
+//           justifyContent: "space-between",
+//           marginBottom: "24px",
 //         }}
 //       >
-//         {/* LEFT SIDE - Image Upload */}
-//         <Card title="Magazine Thumbnail" style={{ width: "40%" }}>
+//         <h1>Add Vartha janapada</h1>
+//         {userRole === "moderator" && (
+//           <Tag color="orange">Requires Admin Approval</Tag>
+//         )}
+//       </div>
+
+//       <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
+//         <Card title="Thumbnail" style={{ flex: 1, minWidth: "300px" }}>
 //           <Upload
 //             customRequest={handleImageUpload}
 //             showUploadList={false}
 //             accept="image/*"
 //           >
-//             <Button icon={<UploadOutlined />} loading={imageUploading}>
-//               {imageUploading ? "Uploading..." : "Upload Thumbnail"}
+//             <Button icon={<UploadOutlined />} loading={imageUploading} block>
+//               {imageUrl ? "Change Thumbnail" : "Upload Thumbnail"}
 //             </Button>
 //           </Upload>
-
 //           {imageUrl && (
-//             <img
-//               src={imageUrl}
-//               alt="Magazine"
-//               style={{ width: "100%", marginTop: 10 }}
-//             />
+//             <div style={{ marginTop: "16px", textAlign: "center" }}>
+//               <img
+//                 src={imageUrl}
+//                 alt="Preview"
+//                 style={{ maxWidth: "100%", maxHeight: "200px" }}
+//               />
+//             </div>
 //           )}
 //         </Card>
 
-//         {/* RIGHT SIDE - General Information */}
-//         <Card title="General Information" style={{ width: "60%" }}>
+//         <Card title="Details" style={{ flex: 2, minWidth: "400px" }}>
 //           <Form form={form} layout="vertical" onFinish={handleFormSubmit}>
 //             <Form.Item
-//               label="Title"
 //               name="title"
-//               rules={[{ required: true, message: "Title is required" }]}
+//               label="Title"
+//               rules={[{ required: true, message: "Please input the title!" }]}
 //             >
-//               <Input placeholder="Enter magazine title" />
+//               <Input placeholder="Magazine title  Vartha janapada" />
 //             </Form.Item>
 
 //             <Form.Item
-//               label="Description"
 //               name="description"
-//               rules={[{ required: true, message: "Description is required" }]}
-//             >
-//               <TextArea rows={4} placeholder="Enter magazine description" />
-//             </Form.Item>
-
-//             <Form.Item
-//               label="Edition Number"
-//               name="editionNumber"
+//               label="Description"
 //               rules={[
-//                 { required: true, message: "Edition number is required" },
+//                 { required: true, message: "Please input the description!" },
 //               ]}
 //             >
-//               <Input placeholder="Enter edition number" />
+//               <TextArea rows={4} placeholder="Magazine description" />
 //             </Form.Item>
 
-//             {/* PDF Upload */}
-//             <Form.Item label="Magazine PDF" name="magazinePdf">
-//               <Upload
-//                 customRequest={handlePdfUpload}
-//                 showUploadList={false}
-//                 accept=".pdf"
+//             <Form.Item
+//               name="editionNumber"
+//               label="Edition Number"
+//               rules={[
+//                 { required: true, message: "Please input the edition number!" },
+//                 { pattern: /^[0-9]+$/, message: "Please input numbers only!" },
+//               ]}
+//             >
+//               <Input placeholder="Edition number" type="number" min={1} />
+//             </Form.Item>
+
+//             <Form.Item
+//               name="publishedMonth"
+//               label="Published Month"
+//               rules={[
+//                 {
+//                   required: true,
+//                   message: "Please select the published month!",
+//                 },
+//               ]}
+//             >
+//               <Select placeholder="Select month" allowClear>
+//                 {monthOptions.map((month) => (
+//                   <Option key={month.value} value={month.value}>
+//                     {month.label}
+//                   </Option>
+//                 ))}
+//               </Select>
+//             </Form.Item>
+
+//             <Form.Item
+//               name="publishedYear"
+//               label="Published Year"
+//               rules={[
+//                 { required: true, message: "Please input the published year!" },
+//                 {
+//                   pattern: /^[0-9]{4}$/,
+//                   message: "Please enter a valid 4-digit year!",
+//                 },
+//               ]}
+//             >
+//               <Input
+//                 placeholder="Enter year (e.g., 2024)"
+//                 type="number"
+//                 min={1900}
+//                 max={2100}
+//               />
+//             </Form.Item>
+//             <Form.Item label="PDF File" required shouldUpdate>
+//               {() => {
+//                 const hasYear = !!form.getFieldValue("publishedYear");
+//                 const hasMonth = !!form.getFieldValue("publishedMonth");
+//                 return (
+//                   <>
+//                     <Upload
+//                       customRequest={handlePdfUpload}
+//                       showUploadList={false}
+//                       accept=".pdf"
+//                       disabled={!hasYear || !hasMonth} // <-- prevents early uploads
+//                     >
+//                       <Button
+//                         icon={<UploadOutlined />}
+//                         loading={pdfUploading}
+//                         block
+//                         disabled={!hasYear || !hasMonth}
+//                       >
+//                         {pdfUrl ? "Change PDF" : "Upload PDF"}
+//                       </Button>
+//                     </Upload>
+//                     {!hasYear || !hasMonth ? (
+//                       <div
+//                         style={{ marginTop: 8, fontSize: 12, color: "#999" }}
+//                       >
+//                         Select <strong>Published Year</strong> and{" "}
+//                         <strong>Month</strong> first.
+//                       </div>
+//                     ) : null}
+//                     {pdfUrl && (
+//                       <div style={{ marginTop: 8 }}>
+//                         <a
+//                           href={pdfUrl}
+//                           target="_blank"
+//                           rel="noopener noreferrer"
+//                         >
+//                           View Uploaded PDF
+//                         </a>
+//                       </div>
+//                     )}
+//                   </>
+//                 );
+//               }}
+//             </Form.Item>
+
+//             <Form.Item>
+//               <Button
+//                 type="primary"
+//                 htmlType="submit"
+//                 loading={loading}
+//                 block
+//                 size="large"
 //               >
-//                 <Button icon={<UploadOutlined />} loading={pdfUploading}>
-//                   {pdfUploading ? "Uploading..." : "Upload PDF"}
-//                 </Button>
-//               </Upload>
-
-//               {pdfUrl && (
-//                 <div style={{ marginTop: 10 }}>
-//                   <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
-//                     View PDF
-//                   </a>
-//                 </div>
-//               )}
+//                 Add Magazine
+//                 {/* {userRole === "admin" ? "Add magazine" : "Submit for Approval"} */}
+//               </Button>
 //             </Form.Item>
-
-//             <Button type="primary" htmlType="submit" block loading={loading}>
-//               Add Magazine
-//             </Button>
 //           </Form>
 //         </Card>
 //       </div>
@@ -225,7 +394,9 @@
 // }
 
 // export default AddMagazinePage;
-import React, { useState } from "react";
+
+
+import { useState } from "react";
 import {
   Form,
   Input,
@@ -238,14 +409,8 @@ import {
   Select,
 } from "antd";
 import { UploadOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
-import { createMagazine } from "../../service/Magazine/MagazineService";
 import { useNavigate } from "react-router-dom";
-// 🔻 REMOVED Firebase imports
-// import { storage } from "../../service/firebaseConfig";
-// import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-
-// ✅ ADDED Azure upload utility
-import { uploadFileToAzureStorage } from "../../config/azurestorageservice";
+import { createMagazine } from "../../service/Magazine/MagazineService";
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -255,38 +420,20 @@ function AddMagazinePage() {
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [imageUploading, setImageUploading] = useState(false);
-  const [pdfUploading, setPdfUploading] = useState(false);
-  const [imageUrl, setImageUrl] = useState("");
-  const [pdfUrl, setPdfUrl] = useState("");
+  const [thumbnailFile, setThumbnailFile] = useState(null);
+  const [pdfFile, setPdfFile] = useState(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState("");
   const userRole = localStorage.getItem("role");
 
-  // Month options
   const monthOptions = [
-    { value: "January", label: "January" },
-    { value: "February", label: "February" },
-    { value: "March", label: "March" },
-    { value: "April", label: "April" },
-    { value: "May", label: "May" },
-    { value: "June", label: "June" },
-    { value: "July", label: "July" },
-    { value: "August", label: "August" },
-    { value: "September", label: "September" },
-    { value: "October", label: "October" },
-    { value: "November", label: "November" },
-    { value: "December", label: "December" },
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
   ];
 
-  // Generate year options
-  const currentYear = new Date().getFullYear();
-  const yearOptions = Array.from(
-    { length: 16 },
-    (_, i) => currentYear - 10 + i
-  );
-
+  // Handle submit
   const handleFormSubmit = async (values) => {
-    if (!imageUrl || !pdfUrl) {
-      message.error("Please upload both an image and a PDF before submitting.");
+    if (!thumbnailFile || !pdfFile) {
+      message.error("Please upload both a thumbnail and a PDF file before submitting.");
       return;
     }
 
@@ -295,35 +442,38 @@ function AddMagazinePage() {
       const payload = {
         title: values.title,
         description: values.description,
-        magazineThumbnail: imageUrl,
-        magazinePdf: pdfUrl,
         editionNumber: values.editionNumber.toString(),
         publishedMonth: values.publishedMonth,
         publishedYear: values.publishedYear.toString(),
+        magazineThumbnail: thumbnailFile, // File object
+        magazinePdf: pdfFile, // File object
       };
 
       const response = await createMagazine(payload);
 
-      if (!response) {
-        throw new Error("No response from server");
-      }
-
-      if (response.success) {
+      if (response?.success) {
         if (userRole === "moderator") {
-          showModeratorSuccess();
+          confirm({
+            title: "Magazine Submitted for Approval",
+            icon: <ExclamationCircleOutlined />,
+            content: "Your magazine has been submitted and is pending admin approval.",
+            okText: "OK",
+            onOk() {
+              resetForm();
+              navigate("/manage-varthajanapada");
+            },
+          });
         } else {
-          message.success("Magazine published successfully!");
+          message.success("Magazine created successfully!");
           resetForm();
           navigate("/manage-varthajanapada");
         }
       } else {
-        throw new Error(
-          response.message || response.error || "Failed to add magazine"
-        );
+        throw new Error(response?.message || "Failed to create magazine");
       }
     } catch (error) {
       console.error("Submission error:", error);
-      message.error(error.message);
+      message.error(error.message || "Error creating magazine.");
     } finally {
       setLoading(false);
     }
@@ -331,81 +481,38 @@ function AddMagazinePage() {
 
   const resetForm = () => {
     form.resetFields();
-    setImageUrl("");
-    setPdfUrl("");
+    setThumbnailFile(null);
+    setPdfFile(null);
+    setThumbnailPreview("");
   };
 
-  const showModeratorSuccess = () => {
-    confirm({
-      title: "Magazine Submitted for Approval",
-      icon: <ExclamationCircleOutlined />,
-      content:
-        "Your magazine has been submitted and is pending admin approval.",
-      okText: "OK",
-      onOk() {
-        resetForm();
-        navigate("/manage-varthajanapada");
-      },
-    });
-  };
-
-  // ✅ Updated: Upload image to Azure container "varthajanapada"
-  const handleImageUpload = async ({ file }) => {
+  // Handle thumbnail select
+  const handleThumbnailBeforeUpload = (file) => {
     if (!file.type.startsWith("image/")) {
-      message.error("You can only upload image files!");
-      return false;
+      message.error("Please upload an image file!");
+      return Upload.LIST_IGNORE;
     }
     if (file.size > 5 * 1024 * 1024) {
-      message.error("Image must be smaller than 5MB!");
-      return false;
+      message.error("Thumbnail must be smaller than 5MB!");
+      return Upload.LIST_IGNORE;
     }
-
-    setImageUploading(true);
-    try {
-      const response = await uploadFileToAzureStorage(file, "varthajanapada-image");
-      if (response?.blobUrl) {
-        setImageUrl(response.blobUrl);
-        message.success("Image uploaded successfully!");
-      } else {
-        message.error("Image upload failed.");
-      }
-    } catch (error) {
-      console.error("Image upload error:", error);
-      message.error("Error uploading image to Azure.");
-    } finally {
-      setImageUploading(false);
-    }
-    return false; // Prevent AntD auto-upload
+    setThumbnailFile(file);
+    setThumbnailPreview(URL.createObjectURL(file));
+    return false; // prevent auto-upload
   };
 
-  // ✅ Updated: Upload PDF to Azure container "varthajanapada"
-  const handlePdfUpload = async ({ file }) => {
-    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
-      message.error("You can only upload PDF files!");
-      return false;
+  // Handle PDF select
+  const handlePdfBeforeUpload = (file) => {
+    if (file.type !== "application/pdf" && !file.name.endsWith(".pdf")) {
+      message.error("Please upload a valid PDF file!");
+      return Upload.LIST_IGNORE;
     }
-    // Optional: Add size limit (e.g., 100MB)
     if (file.size > 100 * 1024 * 1024) {
       message.error("PDF must be smaller than 100MB!");
-      return false;
+      return Upload.LIST_IGNORE;
     }
-
-    setPdfUploading(true);
-    try {
-      const response = await uploadFileToAzureStorage(file, "varthajanapada-pdf");
-      if (response?.blobUrl) {
-        setPdfUrl(response.blobUrl);
-        message.success("PDF uploaded successfully!");
-      } else {
-        message.error("PDF upload failed.");
-      }
-    } catch (error) {
-      console.error("PDF upload error:", error);
-      message.error("Error uploading PDF to Azure.");
-    } finally {
-      setPdfUploading(false);
-    }
-    return false; // Prevent AntD auto-upload
+    setPdfFile(file);
+    return false;
   };
 
   return (
@@ -417,35 +524,35 @@ function AddMagazinePage() {
           marginBottom: "24px",
         }}
       >
-        <h1>Add Vartha janapada</h1>
-        {userRole === "moderator" && (
-          <Tag color="orange">Requires Admin Approval</Tag>
-        )}
+        <h1>Add Vartha Janapada</h1>
+        {userRole === "moderator" && <Tag color="orange">Requires Admin Approval</Tag>}
       </div>
 
       <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
+        {/* Thumbnail Upload Card */}
         <Card title="Thumbnail" style={{ flex: 1, minWidth: "300px" }}>
           <Upload
-            customRequest={handleImageUpload}
+            beforeUpload={handleThumbnailBeforeUpload}
             showUploadList={false}
             accept="image/*"
-            // beforeUpload removed since we handle validation in customRequest
           >
-            <Button icon={<UploadOutlined />} loading={imageUploading} block>
-              {imageUrl ? "Change Thumbnail" : "Upload Thumbnail"}
+            <Button icon={<UploadOutlined />} block>
+              {thumbnailFile ? "Change Thumbnail" : "Upload Thumbnail"}
             </Button>
           </Upload>
-          {imageUrl && (
+
+          {thumbnailPreview && (
             <div style={{ marginTop: "16px", textAlign: "center" }}>
               <img
-                src={imageUrl}
+                src={thumbnailPreview}
                 alt="Preview"
-                style={{ maxWidth: "100%", maxHeight: "200px" }}
+                style={{ maxWidth: "100%", maxHeight: "200px", borderRadius: "8px" }}
               />
             </div>
           )}
         </Card>
 
+        {/* Form Details Card */}
         <Card title="Details" style={{ flex: 2, minWidth: "400px" }}>
           <Form form={form} layout="vertical" onFinish={handleFormSubmit}>
             <Form.Item
@@ -453,15 +560,13 @@ function AddMagazinePage() {
               label="Title"
               rules={[{ required: true, message: "Please input the title!" }]}
             >
-              <Input placeholder="Magazine title  Vartha janapada" />
+              <Input placeholder="Magazine title (e.g. MOK January 2024)" />
             </Form.Item>
 
             <Form.Item
               name="description"
               label="Description"
-              rules={[
-                { required: true, message: "Please input the description!" },
-              ]}
+              rules={[{ required: true, message: "Please input the description!" }]}
             >
               <TextArea rows={4} placeholder="Magazine description" />
             </Form.Item>
@@ -480,17 +585,12 @@ function AddMagazinePage() {
             <Form.Item
               name="publishedMonth"
               label="Published Month"
-              rules={[
-                {
-                  required: true,
-                  message: "Please select the published month!",
-                },
-              ]}
+              rules={[{ required: true, message: "Please select the published month!" }]}
             >
               <Select placeholder="Select month" allowClear>
                 {monthOptions.map((month) => (
-                  <Option key={month.value} value={month.value}>
-                    {month.label}
+                  <Option key={month} value={month}>
+                    {month}
                   </Option>
                 ))}
               </Select>
@@ -508,7 +608,7 @@ function AddMagazinePage() {
               ]}
             >
               <Input
-                placeholder="Enter year (e.g., 2024)"
+                placeholder="Enter year (e.g. 2024)"
                 type="number"
                 min={1900}
                 max={2100}
@@ -517,20 +617,20 @@ function AddMagazinePage() {
 
             <Form.Item label="PDF File" required>
               <Upload
-                customRequest={handlePdfUpload}
+                beforeUpload={handlePdfBeforeUpload}
                 showUploadList={false}
                 accept=".pdf"
-                // beforeUpload removed — handled in customRequest
               >
-                <Button icon={<UploadOutlined />} loading={pdfUploading} block>
-                  {pdfUrl ? "Change PDF" : "Upload PDF"}
+                <Button icon={<UploadOutlined />} block>
+                  {pdfFile ? "Change PDF" : "Upload PDF"}
                 </Button>
               </Upload>
-              {pdfUrl && (
-                <div style={{ marginTop: "8px" }}>
-                  <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
-                    View Uploaded PDF
-                  </a>
+
+              {pdfFile && (
+                <div style={{ marginTop: 8 }}>
+                  <span style={{ fontSize: 12, color: "#666" }}>
+                    Selected file: <strong>{pdfFile.name}</strong>
+                  </span>
                 </div>
               )}
             </Form.Item>
@@ -543,7 +643,7 @@ function AddMagazinePage() {
                 block
                 size="large"
               >
-                {userRole === "admin" ? "Publish Now" : "Submit for Approval"}
+                {userRole === "admin" ? "Add Magazine" : "Submit for Approval"}
               </Button>
             </Form.Item>
           </Form>

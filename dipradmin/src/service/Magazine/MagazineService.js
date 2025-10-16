@@ -1,5 +1,7 @@
-const BASE_URL = import.meta.env.VITE_BASE_URL;
+import { message } from "antd";
 
+const BASE_URL = import.meta.env.VITE_BASE_URL;
+const LLM_URL = import.meta.env.VITE_LLM_API_URL;
 export const getMagazines = async () => {
   try {
     const response = await fetch(`${BASE_URL}/api/magazine`, {
@@ -77,49 +79,101 @@ export const deleteMagazine = async (magazineId) => {
   }
 };
 
+// export const createMagazine = async (magazineData) => {
+//   try {
+//          const token = localStorage.getItem("token");
+//     const response = await fetch(`${LLM_URL}/api/magazines/create`, {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//         Authorization: `Bearer ${token}`, 
+//       },
+//       body: JSON.stringify(magazineData),
+//     });
+//     return await response.json();
+//   } catch (error) {
+//     message.error("Error creating article.");
+//     throw error;
+//   }
+// };
+
+// src/service/Magazine/MagazineService.js
 export const createMagazine = async (magazineData) => {
   try {
-         const token = localStorage.getItem("token");
-    const response = await fetch(`${BASE_URL}/api/magazine`, {
+    const token = localStorage.getItem("token");
+
+    // Build FormData object for multipart upload
+    const formData = new FormData();
+    formData.append("title", magazineData.title);
+    formData.append("description", magazineData.description);
+    formData.append("editionNumber", magazineData.editionNumber);
+    formData.append("publishedMonth", magazineData.publishedMonth);
+    formData.append("publishedYear", magazineData.publishedYear);
+
+    // Append files directly (NOT URLs)
+    formData.append("magazineThumbnail", magazineData.magazineThumbnail);
+    formData.append("magazinePdf", magazineData.magazinePdf);
+
+    const response = await fetch(`${LLM_URL}/api/magazines/create`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`, 
+        Authorization: `Bearer ${token}`, // no need for Content-Type manually
       },
-      body: JSON.stringify(magazineData),
+      body: formData,
     });
+
     return await response.json();
   } catch (error) {
-    message.error("Error creating article.");
+    console.error("Error creating magazine:", error);
     throw error;
   }
 };
 
+
 export const updateMagazine1 = async (magazineId, magazineData) => {
   try {
     const token = localStorage.getItem("token");
-    const response = await fetch(
-      `${BASE_URL}/api/magazine/update/${magazineId}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(magazineData),
-      }
-    );
-    
+
+    // Build FormData for multipart upload
+    const formData = new FormData();
+    formData.append("title", magazineData.title);
+    formData.append("description", magazineData.description);
+    formData.append("editionNumber", magazineData.editionNumber);
+    formData.append("publishedMonth", magazineData.publishedMonth);
+    formData.append("publishedYear", magazineData.publishedYear);
+
+    // Append files or URLs depending on what’s passed
+    if (magazineData.magazineThumbnail instanceof File) {
+      formData.append("magazineThumbnail", magazineData.magazineThumbnail);
+    } else if (typeof magazineData.magazineThumbnail === "string") {
+      formData.append("magazineThumbnailUrl", magazineData.magazineThumbnail);
+    }
+
+    if (magazineData.magazinePdf instanceof File) {
+      formData.append("magazinePdf", magazineData.magazinePdf);
+    } else if (typeof magazineData.magazinePdf === "string") {
+      formData.append("magazinePdfUrl", magazineData.magazinePdf);
+    }
+
+    const response = await fetch(`${LLM_URL}/api/magazines/${magazineId}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`, // no need for Content-Type here
+      },
+      body: formData,
+    });
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     return await response.json();
   } catch (error) {
     console.error("Error updating magazine:", error);
     throw error;
   }
 };
+
 
 
 export const approveMagazine = async (magazineId) => {
