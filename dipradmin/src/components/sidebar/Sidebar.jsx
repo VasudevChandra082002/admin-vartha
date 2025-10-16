@@ -151,6 +151,7 @@ import { FaRegNewspaper } from "react-icons/fa";
 import { MdOutlineWebStories } from "react-icons/md";
 import { TbCategoryFilled } from "react-icons/tb";
 import { FaRegComments  } from "react-icons/fa";
+import { MdOutlineEditNotifications } from "react-icons/md";
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -249,6 +250,10 @@ const Sidebar = () => {
             <Menu.Item key="/category" icon={<TbCategoryFilled />}>
               Category
             </Menu.Item>
+            <Menu.Item key="/latestnotification" icon={<MdOutlineEditNotifications />}>
+              Latest Notification
+            </Menu.Item>
+
             {/* <Menu.Item key="/manage-notifications" icon={<VideoCameraAddOutlined />}>
               Notifications
             </Menu.Item> */}
