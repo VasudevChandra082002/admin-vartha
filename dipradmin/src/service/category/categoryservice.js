@@ -1,4 +1,6 @@
 const BASE_URL = import.meta.env.VITE_BASE_URL;
+const LLM_URL = import.meta.env.VITE_LLM_API_URL; 
+
 
 export const getCategories = async () => {
   try {
@@ -18,7 +20,9 @@ export const deleteCategory = async (categoryId) => {
   try {
     const response = await fetch(`${BASE_URL}/api/category/${categoryId}`, {
       method: "DELETE",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+       },
     });
     const data = await response.json();
     return data;
@@ -31,7 +35,7 @@ export const deleteCategory = async (categoryId) => {
 export const addCategory = async (category) => {
   try {
      const token = localStorage.getItem("token");
-    const response = await fetch(`${BASE_URL}/api/category/createCategory`, {
+    const response = await fetch(`${LLM_URL}/api/categories/create`, {
      method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -49,7 +53,7 @@ export const addCategory = async (category) => {
 
 export const updateCategory = async (category, categoryId) => {
   try {
-    const response = await fetch(`${BASE_URL}/api/category/${categoryId}`, {
+    const response = await fetch(`${LLM_URL}/api/categories/${categoryId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(category),

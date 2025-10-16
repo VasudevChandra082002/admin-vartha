@@ -143,7 +143,7 @@ function BannersTable() {
           style={{ cursor: role === "admin" && status !== "approved" ? "pointer" : "default" }}
           onClick={() => role === "admin" && status !== "approved" && handleApproveClick(record)}
         >
-          {status}
+          {status.toUpperCase()}
           {role === "admin" && status !== "approved" && (
             <span style={{ marginLeft: 5 }}><CheckOutlined /></span>
           )}

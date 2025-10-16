@@ -1,86 +1,91 @@
 import React, { useEffect, useState } from "react";
-import { Card, DatePicker, message } from "antd";
+import { Card, DatePicker, message, Spin } from "antd";
 import { Bar } from "@ant-design/plots";
+import { CalendarOutlined } from "@ant-design/icons";
 const moment = window.moment;
+
 function DailyUserCard() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(moment()); // Default to current month/year
+  const [selectedDate, setSelectedDate] = useState(moment());
 
-  // Function to fetch user activity data based on the selected month and year
+  // Fetch monthly user data
   const fetchData = async (selectedMonth) => {
     try {
       const year = selectedMonth.year();
-      const month = selectedMonth.month() + 1; // months are zero-indexed, so we add 1
+      const month = selectedMonth.month() + 1;
 
-      // Make API request to fetch data using fetch
       const response = await fetch(
         `https://vartha-janapada.vercel.app/api/users/getMonthlyUser?year=${year}&month=${month}`
       );
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch data.");
-      }
+      if (!response.ok) throw new Error("Failed to fetch data.");
 
       const result = await response.json();
-
       if (result.success) {
-        setData(result.data); // Set the data from the API
+        setData(result.data);
       } else {
-        message.error("No data found for this month.");
+        message.warning("No data found for this month.");
+        setData([]);
       }
     } catch (error) {
-      console.error("Error fetching data", error);
-      message.error("Failed to fetch data.");
+      console.error("Error fetching data:", error);
+      message.error("Error fetching data.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle the change in the DatePicker (month and year)
+  useEffect(() => {
+    fetchData(selectedDate);
+  }, []);
+
   const handleDateChange = (date) => {
     if (date) {
-      setSelectedDate(date); // Update the selected date
-      setLoading(true); // Set loading state to true while fetching new data
-      fetchData(date); // Fetch data for the selected month and year
+      setSelectedDate(date);
+      setLoading(true);
+      fetchData(date);
     }
   };
 
-  // Transform the data for the Bar chart
+  // Chart data formatting
   const chartData = data.map((item) => ({
-    date: item.date.slice(8, 10), // Extract day (last two digits of the date)
+    date: item.date.slice(8, 10),
     count: item.count,
   }));
 
-  // Configure the Bar chart
+  // Chart config
   const config = {
     data: chartData,
-    xField: "date", // X-axis will show the day of the month
-    yField: "count", // Y-axis will show the user count
-    seriesField: "date",
+    xField: "date",
+    yField: "count",
+    smooth: true,
+    color: ({ count }) =>
+      count > 100
+        ? "#4CAF50"
+        : count > 50
+        ? "#2196F3"
+        : "#FFC107", // dynamic color
+    columnStyle: {
+      radius: [6, 6, 0, 0],
+      fillOpacity: 0.9,
+    },
+    tooltip: {
+      showMarkers: true,
+      shared: true,
+    },
     label: {
+      position: "top",
       style: {
-        fill: "#FFFFFF",
-        opacity: 0.6,
+        fill: "#fff",
+        fontSize: 12,
+        fontWeight: "bold",
       },
-    },
-    meta: {
-      date: {
-        alias: "Date",
-      },
-      count: {
-        alias: "Users Joined",
-      },
-    },
-    color: ["#4DB8FF", "#F37C9B", "#F8A700", "#00B38A", "#00A9E0"], // Set colors for bars
-    title: {
-      visible: true,
-      text: "User Activity for the Selected Month", // Chart title
-      style: { fontSize: 18, fontWeight: "bold" },
     },
     xAxis: {
       label: {
         style: {
+          fill: "#aaa",
           fontSize: 12,
         },
       },
@@ -88,42 +93,72 @@ function DailyUserCard() {
     yAxis: {
       label: {
         style: {
+          fill: "#aaa",
           fontSize: 12,
         },
       },
     },
-    legend: {
-      position: "top-right", // Position the legend at the top-right
+    meta: {
+      date: { alias: "Day" },
+      count: { alias: "New Users" },
     },
-    tooltip: {
-      showMarkers: true, // Show markers on the tooltip
-    },
-    interactions: [
-      {
-        type: "active-region", // Enable active region interaction
-      },
-    ],
+    interactions: [{ type: "active-region" }],
   };
-
-  // Use useEffect to fetch data when the component mounts or selectedDate changes
-  useEffect(() => {
-    fetchData(selectedDate); // Fetch data for the current month on initial load
-  }, []); // Empty dependency array makes sure this runs only once on mount
 
   return (
     <Card
-      title="New Users Daily"
-      loading={loading}
+      title={
+        <span style={{ fontWeight: 600, fontSize: "16px", color: "#222" }}>
+          📊 Daily New Users
+        </span>
+      }
       extra={
         <DatePicker
           value={selectedDate}
           onChange={handleDateChange}
           picker="month"
-          style={{ width: 200 }}
+          suffixIcon={<CalendarOutlined />}
+          style={{
+            borderRadius: 8,
+            boxShadow: "0 0 4px rgba(0,0,0,0.1)",
+            width: 180,
+          }}
         />
       }
+      style={{
+        borderRadius: "12px",
+        background: "linear-gradient(135deg, #ffffff, #f3f7ff)",
+        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+        padding: "16px",
+      }}
     >
-      <Bar {...config} />
+      {loading ? (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "250px",
+          }}
+        >
+          <Spin size="large" />
+        </div>
+      ) : data.length === 0 ? (
+        <div
+          style={{
+            textAlign: "center",
+            color: "#888",
+            fontSize: "16px",
+            padding: "50px 0",
+          }}
+        >
+          No data available for this month 📭
+        </div>
+      ) : (
+        <div style={{ height: "300px", paddingTop: "10px" }}>
+          <Bar {...config} />
+        </div>
+      )}
     </Card>
   );
 }

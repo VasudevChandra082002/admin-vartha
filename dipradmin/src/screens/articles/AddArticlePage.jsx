@@ -8,12 +8,11 @@ import {
   Upload,
   Card,
   Select,
-  Modal,
   Radio,
   Space,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
-import { createArticle, updateArticle } from "../../service/Article/ArticleService";
+import { createArticle } from "../../service/Article/ArticleService";
 import { useNavigate } from "react-router-dom";
 import { uploadFileToAzureStorage } from "../../config/azurestorageservice";
 import { getCategories } from "../../service/categories/CategoriesApi";
@@ -28,26 +27,23 @@ function AddArticlePage() {
   const [imageUploading, setImageUploading] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [previewVisible, setPreviewVisible] = useState(false);
-  const [articleData, setArticleData] = useState(null);
 
   useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
-    try {
-      const response = await getCategories();
-      if (response.success) {
-        setCategories(response.data);
-      } else {
-        message.error("Failed to load categories.");
+    (async () => {
+      try {
+        const response = await getCategories();
+        if (response?.success && Array.isArray(response.data)) {
+          setCategories(response.data);
+        } else if (Array.isArray(response)) {
+          setCategories(response);
+        } else {
+          message.error("Failed to load categories.");
+        }
+      } catch {
+        message.error("Error fetching categories.");
       }
-    } catch {
-      message.error("Error fetching categories.");
-    }
-  };
+    })();
+  }, []);
 
   const handleFormSubmit = async (values) => {
     setLoading(true);
@@ -57,37 +53,46 @@ function AddArticlePage() {
         setLoading(false);
         return;
       }
+      if (!values.publishedAt) {
+        message.error("Please select a published date.");
+        setLoading(false);
+        return;
+      }
 
       const payload = {
-        ...values,
+        title: values.title,
+        description: values.description,
+        author: values.author,
         publishedAt: values.publishedAt.toISOString(),
         newsImage: imageUrl,
-        category: selectedCategory,
-        // 👇 These two come from the form's radio groups
-        magazineType: values.magazineType, // "magazine" | "magazine2"
-        newsType: values.newsType,         // "statenews" | "districtnews" | "specialnews"
+        category: values.category,      
+        magazineType: values.magazineType,  // "magazine" | "magazine2"
+        newsType: values.newsType,          // "statenews" | "districtnews" | "specialnews"
       };
 
       const response = await createArticle(payload);
-      if (response.success) {
-        message.success("Article added successfully!");
-        setArticleData(response.data);
-        setPreviewVisible(true);
+      console.log("Create article response:", response);
+
+      if (response?.success) {
+        message.success("Article created successfully!");
+        navigate("/manage-articles");
         form.resetFields();
         setImageUrl("");
-        setSelectedCategory(null);
+        // Navigate to a list page if you have one (optional)
+        // navigate("/manage-articles");
       } else {
-        message.error("Failed to add article.");
+        message.error(response?.message || "Failed to create article.");
       }
-    } catch {
-      message.error("Error adding article.");
+    } catch (err) {
+      console.error("Error creating article:", err);
+      message.error("Error creating article.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleUpload = async ({ file }) => {
-    if (!file.type.startsWith("image/")) {
+    if (!file.type?.startsWith("image/")) {
       message.error("Only image files are allowed!");
       return false;
     }
@@ -112,26 +117,6 @@ function AddArticlePage() {
       setImageUploading(false);
     }
     return false;
-  };
-
-  const handlePreviewUpdate = async () => {
-    const updatedData = form.getFieldsValue();
-    try {
-      const payload = {
-        ...updatedData,
-        isLive: true,
-      };
-      const response = await updateArticle(articleData._id, payload);
-      if (response.success) {
-        message.success("Article created successfully!");
-        setPreviewVisible(false);
-        setArticleData(response.data);
-      } else {
-        message.error("Failed to update article.");
-      }
-    } catch {
-      message.error("Error updating article.");
-    }
   };
 
   return (
@@ -192,10 +177,7 @@ function AddArticlePage() {
               name="category"
               rules={[{ required: true, message: "Category is required" }]}
             >
-              <Select
-                placeholder="Select category"
-                onChange={(value) => setSelectedCategory(value)}
-              >
+              <Select placeholder="Select category">
                 {categories.map((category) => (
                   <Option key={category._id} value={category._id}>
                     {category.name}
@@ -220,11 +202,12 @@ function AddArticlePage() {
               <DatePicker style={{ width: "100%" }} />
             </Form.Item>
 
-            {/* 👇 Magazine Type (radio) */}
             <Form.Item
               label="Magazine Type"
               name="magazineType"
-              rules={[{ required: true, message: "Please select a magazine type" }]}
+              rules={[
+                { required: true, message: "Please select a magazine type" },
+              ]}
             >
               <Radio.Group>
                 <Space direction="vertical">
@@ -234,7 +217,6 @@ function AddArticlePage() {
               </Radio.Group>
             </Form.Item>
 
-            {/* 👇 News Type (radio) */}
             <Form.Item
               label="News Type"
               name="newsType"
@@ -249,89 +231,18 @@ function AddArticlePage() {
               </Radio.Group>
             </Form.Item>
 
-            <Button type="primary" htmlType="submit" block loading={loading}>
-              Preview
+            <Button
+              type="primary"
+              htmlType="submit"
+              block
+              loading={loading}
+              disabled={imageUploading}
+            >
+              Create Article
             </Button>
           </Form>
         </Card>
       </div>
-
-      {/* Preview Modal */}
-      <Modal
-        title="Preview Article"
-        open={previewVisible}
-        onCancel={() => setPreviewVisible(false)}
-        onOk={handlePreviewUpdate}
-        okText="Confirm"
-      >
-        <Form layout="vertical" initialValues={articleData}>
-          <Form.Item label="Title" name="title">
-            <Input />
-          </Form.Item>
-
-          <Form.Item label="Description" name="description">
-            <TextArea rows={4} />
-          </Form.Item>
-
-          {/* Optional: show/edit these in preview too */}
-          <Form.Item label="Magazine Type" name="magazineType">
-            <Radio.Group>
-              <Space direction="vertical">
-                <Radio value="magazine">Vartha Janapada</Radio>
-                <Radio value="magazine2">March Of Karnataka</Radio>
-              </Space>
-            </Radio.Group>
-          </Form.Item>
-
-          <Form.Item label="News Type" name="newsType">
-            <Radio.Group>
-              <Space direction="vertical">
-                <Radio value="statenews">State News</Radio>
-                <Radio value="districtnews">District News</Radio>
-                <Radio value="specialnews">Special News</Radio>
-              </Space>
-            </Radio.Group>
-          </Form.Item>
-
-          <Form.Item label="Hindi Title" name={["hindi", "title"]}>
-            <Input />
-          </Form.Item>
-
-          <Form.Item label="Hindi Description" name={["hindi", "description"]}>
-            <TextArea rows={4} />
-          </Form.Item>
-
-          <Form.Item label="Kannada Title" name={["kannada", "title"]}>
-            <Input />
-          </Form.Item>
-
-          <Form.Item label="Kannada Description" name={["kannada", "description"]}>
-            <TextArea rows={4} />
-          </Form.Item>
-
-          <Form.Item label="English Title" name={["English", "title"]}>
-            <Input />
-          </Form.Item>
-
-          <Form.Item label="English Description" name={["English", "description"]}>
-            <TextArea rows={4} />
-          </Form.Item>
-
-          <Form.Item label="Category" name="category">
-            <Select>
-              {categories.map((category) => (
-                <Option key={category._id} value={category._id}>
-                  {category.name}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          <Form.Item label="Author" name="author">
-            <Input />
-          </Form.Item>
-        </Form>
-      </Modal>
     </div>
   );
 }

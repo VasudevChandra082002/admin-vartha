@@ -48,6 +48,7 @@ function MagazineTable2() {
   const fetchMagazines = async () => {
     try {
       const response = await getMagazines();
+      console.log("Magazine table response get all magazines VArtha janapda", response);
       if (response.success) {
         setMagazines(response.data);
         setFilteredMagazines(response.data);

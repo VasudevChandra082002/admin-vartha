@@ -204,33 +204,44 @@ function UsersTable() {
       key: "phone_Number",
     },
 
-    {
-      title: "Created Time",
-      dataIndex: "createdTime",
-      key: "createdTime",
-      render: (time) => moment(time).format("YYYY-MM-DD HH:mm"),
-    },
-    {
-      title: "Last Logged In",
-      dataIndex: "last_logged_in",
-      key: "last_logged_in",
-      render: (time) =>
-        time ? moment(time).format("YYYY-MM-DD HH:mm") : "Never Logged In",
-    },
-    {
-      title: "Role",
-      dataIndex: "role",
-      key: "role",
-      render: (role) => (
-        <Tag
-          color={
-            role === "admin" ? "red" : role === "moderator" ? "blue" : "green"
-          }
-        >
-          {role.toUpperCase()}
-        </Tag>
-      ),
-    },
+    // {
+    //   title: "Created Time",
+    //   dataIndex: "createdTime",
+    //   key: "createdTime",
+    //   render: (time) => moment(time).format("YYYY-MM-DD HH:mm"),
+    // },
+    // {
+    //   title: "Last Logged In",
+    //   dataIndex: "last_logged_in",
+    //   key: "last_logged_in",
+    //   render: (time) =>
+    //     time ? moment(time).format("YYYY-MM-DD HH:mm") : "Never Logged In",
+    // },
+  {
+  title: "Role",
+  dataIndex: "role",
+  key: "role",
+  render: (role) => {
+    // Normalize "content" role to "user"
+    const displayRole =
+      role === "content" ? "user" : role;
+
+    return (
+      <Tag
+        color={
+          displayRole === "admin"
+            ? "red"
+            : displayRole === "moderator"
+            ? "blue"
+            : "green"
+        }
+      >
+        {displayRole.toUpperCase()}
+      </Tag>
+    );
+  },
+},
+
     {
       title: "Actions",
       key: "actions",

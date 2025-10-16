@@ -153,7 +153,7 @@ function CategoryTable() {
             handleApproveClick(record)
           }
         >
-          {status}
+          {status.toUpperCase()}
           {role === "admin" && status !== "approved" && (
             <span style={{ marginLeft: 5 }}>
               <CheckOutlined />

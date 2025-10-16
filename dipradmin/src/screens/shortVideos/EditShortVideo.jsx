@@ -13,6 +13,7 @@ import {
   Col,
   Radio,
   Space,
+  Select,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import {
@@ -21,15 +22,11 @@ import {
   getHistoryOfShortVideosById,
   revertVideoVersionByversionNumber,
 } from "../../service/ShortVideos/ShortVideoservice";
-
-// 🔻 REMOVED Firebase
-// import { storage } from "../../service/firebaseConfig";
-// import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-
-// ✅ ADDED Azure
+import { getCategories } from "../../service/categories/CategoriesApi";
 import { uploadFileToAzureStorage } from "../../config/azurestorageservice";
 
 const { TextArea } = Input;
+const { Option } = Select;
 
 function EditShortVideo() {
   const { videoId } = useParams();
@@ -46,29 +43,50 @@ function EditShortVideo() {
   const [uploadingThumb, setUploadingThumb] = useState(false);
   const [versionHistory, setVersionHistory] = useState([]);
   const [previousVersion, setPreviousVersion] = useState(null);
-  const [magazineType, setMagazineType] = useState(null);
-  const [newsType, setNewsType] = useState(null);
   const [isReverting, setIsReverting] = useState(false);
+
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    // load categories
+    (async () => {
+      try {
+        const res = await getCategories();
+        if (res?.success && Array.isArray(res.data)) {
+          setCategories(res.data);
+        } else if (Array.isArray(res)) {
+          setCategories(res);
+        } else {
+          message.error("Failed to load categories");
+        }
+      } catch {
+        message.error("Error fetching categories");
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     fetchVideoData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchVideoData = async () => {
     try {
       const res = await getVideoById(videoId);
       if (res.success) {
-        const video = res.data;
+        const v = res.data;
+
+        // prefill the form with what we have
         form.setFieldsValue({
-          title: video.title,
-          description: video.description,
-          magazineType: video.magazineType,
-          newsType: video.newsType,
+          title: v.title,
+          description: v.description,
+          magazineType: v.magazineType,
+          newsType: v.newsType,
+          category: v.category?._id || v.category, // works if populated or raw ObjectId
         });
-        setVideoUrl(video.video_url);
-        setThumbnailUrl(video.thumbnail);
-        setMagazineType(video.magazineType);
-        setNewsType(video.newsType);
+
+        setVideoUrl(v.video_url);
+        setThumbnailUrl(v.thumbnail);
       } else {
         message.error(res.message || "Failed to load video");
       }
@@ -93,9 +111,7 @@ function EditShortVideo() {
             const prev = sorted.find(
               (v) => v.versionNumber === versionNumber - 1
             );
-            if (prev) {
-              setPreviousVersion(prev);
-            }
+            if (prev) setPreviousVersion(prev);
           }
         } catch (err) {
           console.error("Error fetching version history", err);
@@ -119,7 +135,9 @@ function EditShortVideo() {
       );
 
       if (res.success) {
-        message.success(`Successfully reverted to version ${previousVersion.versionNumber}`);
+        message.success(
+          `Successfully reverted to version ${previousVersion.versionNumber}`
+        );
         await fetchVideoData();
         setTimeout(() => {
           navigate("/manage-shortvideos");
@@ -135,7 +153,7 @@ function EditShortVideo() {
     }
   };
 
-  // ✅ Upload video to Azure container "shortvideos"
+  // ===== Azure uploads =====
   const handleVideoUpload = async ({ file }) => {
     if (!file.type.startsWith("video/")) {
       message.error("Only video files are allowed!");
@@ -161,10 +179,9 @@ function EditShortVideo() {
     } finally {
       setUploadingVideo(false);
     }
-    return false; // Prevent AntD auto-upload
+    return false;
   };
 
-  // ✅ Upload thumbnail to Azure container "shortvideoimages"
   const handleThumbnailUpload = async ({ file }) => {
     if (!file.type.startsWith("image/")) {
       message.error("Only image files are allowed!");
@@ -190,19 +207,26 @@ function EditShortVideo() {
     } finally {
       setUploadingThumb(false);
     }
-    return false; // Prevent AntD auto-upload
+    return false;
   };
 
   const onFinish = async (values) => {
     try {
+      if (!videoUrl || !thumbnailUrl) {
+        message.error("Please upload both video and thumbnail.");
+        return;
+      }
+
       const payload = {
         title: values.title,
         description: values.description,
         video_url: videoUrl,
         thumbnail: thumbnailUrl,
-        magazineType: magazineType,
-        newsType: newsType,
+        magazineType: values.magazineType, // from form
+        newsType: values.newsType,         // from form
+        category: values.category,         // from form
       };
+
       const res = await updatevideoById(videoId, payload);
       if (res.success) {
         message.success("Video updated successfully");
@@ -217,10 +241,7 @@ function EditShortVideo() {
 
   if (loading)
     return (
-      <Spin
-        size="large"
-        style={{ margin: "100px auto", display: "block" }}
-      />
+      <Spin size="large" style={{ margin: "100px auto", display: "block" }} />
     );
 
   return (
@@ -238,6 +259,7 @@ function EditShortVideo() {
             </Button>
           </div>
         )}
+
         <Form layout="vertical" form={form} onFinish={onFinish}>
           <Row gutter={24}>
             {/* Video Upload */}
@@ -248,20 +270,12 @@ function EditShortVideo() {
                   showUploadList={false}
                   accept="video/*"
                 >
-                  <Button
-                    icon={<UploadOutlined />}
-                    loading={uploadingVideo}
-                    block
-                  >
+                  <Button icon={<UploadOutlined />} loading={uploadingVideo} block>
                     {videoUrl ? "Change Video" : "Upload Video"}
                   </Button>
                 </Upload>
                 {videoUrl && (
-                  <video
-                    width="100%"
-                    style={{ marginTop: 10 }}
-                    controls
-                  >
+                  <video width="100%" style={{ marginTop: 10 }} controls>
                     <source src={videoUrl} type="video/mp4" />
                     Your browser does not support the video tag.
                   </video>
@@ -277,20 +291,12 @@ function EditShortVideo() {
                   showUploadList={false}
                   accept="image/*"
                 >
-                  <Button
-                    icon={<UploadOutlined />}
-                    loading={uploadingThumb}
-                    block
-                  >
+                  <Button icon={<UploadOutlined />} loading={uploadingThumb} block>
                     {thumbnailUrl ? "Change Thumbnail" : "Upload Thumbnail"}
                   </Button>
                 </Upload>
                 {thumbnailUrl && (
-                  <Image
-                    src={thumbnailUrl}
-                    width={"100%"}
-                    style={{ marginTop: 10 }}
-                  />
+                  <Image src={thumbnailUrl} width={"100%"} style={{ marginTop: 10 }} />
                 )}
               </Form.Item>
             </Col>
@@ -300,20 +306,39 @@ function EditShortVideo() {
               <Form.Item
                 label="Title"
                 name="title"
-                rules={[{ required: true }]}
+                rules={[{ required: true, message: "Title is required" }]}
               >
                 <Input placeholder="Enter title" />
               </Form.Item>
 
-              <Form.Item label="Description" name="description">
+              <Form.Item
+                label="Description"
+                name="description"
+                rules={[{ required: true, message: "Description is required" }]}
+              >
                 <TextArea rows={4} placeholder="Enter description" />
               </Form.Item>
 
-              <Form.Item label="Magazine Type" name="magazineType">
-                <Radio.Group 
-                  onChange={(e) => setMagazineType(e.target.value)}
-                  value={magazineType}
-                >
+              <Form.Item
+                label="Category"
+                name="category"
+                rules={[{ required: true, message: "Category is required" }]}
+              >
+                <Select placeholder="Select category">
+                  {categories.map((cat) => (
+                    <Option key={cat._id} value={cat._id}>
+                      {cat.name}
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+
+              <Form.Item
+                label="Magazine Type"
+                name="magazineType"
+                rules={[{ required: true, message: "Please select a magazine type" }]}
+              >
+                <Radio.Group>
                   <Space direction="vertical">
                     <Radio value="magazine">Vartha Janapada</Radio>
                     <Radio value="magazine2">March of Karnataka</Radio>
@@ -321,11 +346,12 @@ function EditShortVideo() {
                 </Radio.Group>
               </Form.Item>
 
-              <Form.Item label="News Type" name="newsType">
-                <Radio.Group 
-                  onChange={(e) => setNewsType(e.target.value)}
-                  value={newsType}
-                >
+              <Form.Item
+                label="News Type"
+                name="newsType"
+                rules={[{ required: true, message: "Please select a news type" }]}
+              >
+                <Radio.Group>
                   <Space direction="vertical">
                     <Radio value="statenews">State News</Radio>
                     <Radio value="districtnews">District News</Radio>
@@ -334,7 +360,7 @@ function EditShortVideo() {
                 </Radio.Group>
               </Form.Item>
 
-              <Button type="primary" htmlType="submit" block disabled>
+              <Button type="primary" htmlType="submit" block>
                 Update Video
               </Button>
             </Col>

@@ -1,10 +1,11 @@
 import api from "../config/axiosConfig";
 
 
-export const uploadFileToAzureStorage = async (file, containerName = "photos") => {
+export const uploadFileToAzureStorage = async (file, containerName = "photos", prefix = "") => {
   const formData = new FormData();
-  formData.append("file", file);                // field name must be 'file'
-  formData.append("containerName", containerName); // e.g. 'photos'
+  formData.append("file", file);                 // field name must be 'file'
+  formData.append("containerName", containerName); // dynamic container
+  if (prefix) formData.append("prefix", prefix);   // optional: e.g., "1970/"
 
   const res = await api.post("/api/photos/upload", formData, {
     headers: { "Content-Type": "multipart/form-data" },
