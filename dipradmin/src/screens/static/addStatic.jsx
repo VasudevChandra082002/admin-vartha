@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import  { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Button,
@@ -78,18 +78,18 @@ function AddStaticPage() {
         message.success("Website added successfully!");
         const status = response.data?.status || response.status || "pending";
         if (status === "pending") {
-          message.info("Your static page is pending approval from admin.");
+          message.info("Your website is pending need approval from admin.");
         }
         form.resetFields();
         setImageUrl("");
         setLink("");
         navigate("/website-pages");
       } else {
-        message.error(response?.message || "Failed to create static page.");
+        message.error(response?.message || "Failed to add website.");
       }
     } catch (error) {
       console.error(error);
-      message.error("Error creating static page.");
+      message.error("Error adding website.");
     } finally {
       setSubmitting(false);
     }
@@ -114,7 +114,7 @@ function AddStaticPage() {
         backgroundColor: "#f5f5f5",
       }}
     >
-      <Card title="Add New Static Page" style={{ width: 520 }}>
+      <Card title="Add New Website" style={{ width: 520 }}>
         <Form form={form} layout="vertical" onFinish={handleFormSubmit}>
           {/* Page Name */}
           <Form.Item
@@ -199,7 +199,7 @@ function AddStaticPage() {
               disabled={!link || !imageUrl || uploading}
               style={{ flex: 1 }}
             >
-              {submitting ? "Creating..." : "Create Static Page"}
+              {submitting ? "Creating..." : "Add website"}
             </Button>
             <Button
               block
