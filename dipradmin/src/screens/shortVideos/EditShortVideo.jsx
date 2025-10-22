@@ -319,7 +319,7 @@ function EditShortVideo() {
                 <TextArea rows={4} placeholder="Enter description" />
               </Form.Item>
 
-              <Form.Item
+              {/* <Form.Item
                 label="Category"
                 name="category"
                 rules={[{ required: true, message: "Category is required" }]}
@@ -331,7 +331,7 @@ function EditShortVideo() {
                     </Option>
                   ))}
                 </Select>
-              </Form.Item>
+              </Form.Item> */}
 
               <Form.Item
                 label="Magazine Type"

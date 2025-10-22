@@ -116,22 +116,22 @@ function EditArticlesPage() {
   }, [versionNumber, articleId]);
 
   // Fetch categories
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await getCategories();
-        if (response.success) {
-          setCategories(response.data);
-        } else {
-          message.error("Failed to load categories.");
-        }
-      } catch (error) {
-        message.error("Error fetching categories.");
-      }
-    };
+  // useEffect(() => {
+  //   const fetchCategories = async () => {
+  //     try {
+  //       const response = await getCategories();
+  //       if (response.success) {
+  //         setCategories(response.data);
+  //       } else {
+  //         message.error("Failed to load categories.");
+  //       }
+  //     } catch (error) {
+  //       message.error("Error fetching categories.");
+  //     }
+  //   };
 
-    fetchCategories();
-  }, []);
+  //   fetchCategories();
+  // }, []);
 
   // Submit form
   const handleFormSubmit = async (values) => {
@@ -347,7 +347,7 @@ function EditArticlesPage() {
             <TextArea rows={4} />
           </Form.Item>
 
-          <Form.Item
+          {/* <Form.Item
             label="Category"
             name="category"
             rules={[{ required: true, message: "Category is required" }]}
@@ -359,7 +359,7 @@ function EditArticlesPage() {
                 </Option>
               ))}
             </Select>
-          </Form.Item>
+          </Form.Item> */}
 
           <Form.Item
             label="Author"

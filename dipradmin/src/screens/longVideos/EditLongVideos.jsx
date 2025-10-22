@@ -320,7 +320,7 @@ function EditLongVideos() {
               <TextArea rows={4} />
             </Form.Item>
 
-            <Form.Item
+            {/* <Form.Item
               label="Category"
               name="category"
               rules={[{ required: true, message: "Category is required" }]}
@@ -335,7 +335,7 @@ function EditLongVideos() {
                   </Option>
                 ))}
               </Select>
-            </Form.Item>
+            </Form.Item> */}
 
             {/* Magazine Type Radio Buttons */}
             <Form.Item label="Magazine Type" name="magazineType">
