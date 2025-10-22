@@ -473,7 +473,7 @@ function AddMagazinePage2() {
               <Input placeholder="Enter edition number" />
             </Form.Item>
 
-            <Form.Item label="Category">
+            {/* <Form.Item label="Category">
               <Select
                 placeholder="Select category"
                 value={selectedCategory}
@@ -486,7 +486,7 @@ function AddMagazinePage2() {
                   </Option>
                 ))}
               </Select>
-            </Form.Item>
+            </Form.Item> */}
 
             <Form.Item
               name="publishedMonth"
