@@ -247,9 +247,9 @@ const Sidebar = () => {
               Websites
             </Menu.Item>
 
-            <Menu.Item key="/category" icon={<TbCategoryFilled />}>
+            {/* <Menu.Item key="/category" icon={<TbCategoryFilled />}>
               Category
-            </Menu.Item>
+            </Menu.Item> */}
             <Menu.Item key="/latestnotification" icon={<MdOutlineEditNotifications />}>
               Latest Notification
             </Menu.Item>
@@ -260,11 +260,11 @@ const Sidebar = () => {
           </>
         )}
 
-        {isAdminOrModerator && (
+        {/* {isAdminOrModerator && (
           <Menu.Item key="/manage-moderation" icon={<FaRegComments  />}>
             Comments
           </Menu.Item>
-        )}
+        )} */}
 
         <Menu.Item key="login">
           <Button

@@ -215,18 +215,18 @@ function ShortVideosTable() {
         return text || "N/A";
       },
     },
-    {
-      title: "Total Likes",
-      dataIndex: "total_Likes",
-      key: "total_Likes",
-      render: (text) => text || 0,
-    },
-    {
-      title: "Total Views",
-      dataIndex: "Total_views",
-      key: "Total_views",
-      render: (text) => text || 0,
-    },
+    // {
+    //   title: "Total Likes",
+    //   dataIndex: "total_Likes",
+    //   key: "total_Likes",
+    //   render: (text) => text || 0,
+    // },
+    // {
+    //   title: "Total Views",
+    //   dataIndex: "Total_views",
+    //   key: "Total_views",
+    //   render: (text) => text || 0,
+    // },
     {
       title: "Created By",
       dataIndex: "createdBy",
@@ -377,10 +377,10 @@ function ShortVideosTable() {
                   ? "District news"
                   : selectedVideo.newsType || "N/A"}
               </Descriptions.Item>
-              <Descriptions.Item label="Likes & Views">
+              {/* <Descriptions.Item label="Likes & Views">
                 👍 {selectedVideo.total_Likes || 0} &nbsp;&nbsp;&nbsp; 👀{" "}
                 {selectedVideo.Total_views || 0}
-              </Descriptions.Item>
+              </Descriptions.Item> */}
               <Descriptions.Item label="Status">
                 <Tag
                   color={
@@ -451,9 +451,9 @@ function ShortVideosTable() {
               <Descriptions.Item label="Created By">
                 {selectedVideo.createdBy?.displayName || "N/A"}
               </Descriptions.Item>
-              <Descriptions.Item label="Total Likes">
+              {/* <Descriptions.Item label="Total Likes">
                 {selectedVideo.total_Likes || 0}
-              </Descriptions.Item>
+              </Descriptions.Item> */}
               <Descriptions.Item label="Status">
                 <Tag
                   color={

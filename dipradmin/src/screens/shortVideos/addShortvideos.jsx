@@ -229,7 +229,7 @@ const handleVideoUpload = async ({ file }) => {
               <TextArea rows={4} placeholder="Enter video description" />
             </Form.Item>
 
-            <Form.Item
+            {/* <Form.Item
               label="Category"
               name="category"
               rules={[{ required: true, message: "Category is required" }]}
@@ -244,7 +244,7 @@ const handleVideoUpload = async ({ file }) => {
                   </Option>
                 ))}
               </Select>
-            </Form.Item>
+            </Form.Item> */}
 
             {/* <Form.Item
               label="Topics"
