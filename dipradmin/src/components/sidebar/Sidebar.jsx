@@ -227,9 +227,9 @@ const Sidebar = () => {
             <Menu.Item key="/manage-marchofkarnataka" icon={<BookOutlined />}>
               March of Karnataka
             </Menu.Item>
-            <Menu.Item key="/manage-banners" icon={<MdPages />}>
+            {/* <Menu.Item key="/manage-banners" icon={<MdPages />}>
               Banners
-            </Menu.Item>
+            </Menu.Item> */}
             <Menu.Item key="/manage-shortvideos" icon={<RiVideoOnLine />}>
               Short Videos
             </Menu.Item>

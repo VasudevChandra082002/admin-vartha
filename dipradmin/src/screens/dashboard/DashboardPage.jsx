@@ -241,7 +241,7 @@ function DashboardPage() {
         <StatsCard />
       </div>
       <div className="key-stats">
-        <KeyStats />
+        {/* <KeyStats /> */}
       </div>
       <div className="daily-user">
         <DailyUserCard />
