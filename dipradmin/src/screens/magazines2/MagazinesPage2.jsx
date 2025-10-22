@@ -5,6 +5,7 @@ import { PlusOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 // import MagazineTable from "../../components/magazines/MagazineTable";
 import MagazineTable2 from "../../components/magazines/MagazineTable2";
+import MagazineTable from "../../components/magazines/MagazineTable";
 
 
 function MagazinesPage2() {
