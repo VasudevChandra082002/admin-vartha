@@ -46,23 +46,29 @@ function LongVideoTable() {
     fetchVideos();
   }, []);
 
-  const fetchVideos = async () => {
-    try {
-      const response = await getShortVideos();
+const fetchVideos = async () => {
+  try {
+    const response = await getShortVideos();
 
-      if (response.success) {
-        setVideos(response.data);
-        setFilteredVideos(response.data);
-      } else {
-        message.error("Failed to load videos");
-      }
-    } catch (error) {
-      message.error("Error fetching videos");
-      console.error("Error fetching videos:", error);
-    } finally {
-      setLoading(false);
+    if (response.success) {
+      // ✅ Sort by createdAt in descending order (latest first)
+      const sortedVideos = [...response.data].sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
+
+      setVideos(sortedVideos);
+      setFilteredVideos(sortedVideos);
+    } else {
+      message.error("Failed to load videos");
     }
-  };
+  } catch (error) {
+    message.error("Error fetching videos");
+    console.error("Error fetching videos:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleDelete = async (id) => {
     try {

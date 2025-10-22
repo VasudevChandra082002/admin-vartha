@@ -79,8 +79,8 @@ export const getArticleById = async (articleId) => {
 export const updateArticle = async (articleId, articleData) => {
   try {
     const token = localStorage.getItem("token");
-    const response = await fetch(`${BASE_URL}/api/news/${articleId}`, {
-      method: "PATCH",
+    const response = await fetch(`${LLM_URL}/api/${articleId}`, {
+      method: "PUT",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,

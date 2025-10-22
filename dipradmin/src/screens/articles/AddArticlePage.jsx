@@ -172,7 +172,7 @@ function AddArticlePage() {
               <TextArea rows={4} placeholder="Enter article description" />
             </Form.Item>
 
-            <Form.Item
+            {/* <Form.Item
               label="Category"
               name="category"
               rules={[{ required: true, message: "Category is required" }]}
@@ -184,7 +184,7 @@ function AddArticlePage() {
                   </Option>
                 ))}
               </Select>
-            </Form.Item>
+            </Form.Item> */}
 
             <Form.Item
               label="Author"
