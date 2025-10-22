@@ -264,12 +264,12 @@ function UsersTable() {
           </Tooltip>
           {currentUserRole === "admin" && (
             <>
-              <Tooltip title="Edit User">
+              {/* <Tooltip title="Edit User">
                 <Button
                   icon={<EditOutlined />}
                   onClick={() => handleEdit(record._id)}
                 />
-              </Tooltip>
+              </Tooltip> */}
               <Tooltip title="Delete User">
                 <Button
                   danger
