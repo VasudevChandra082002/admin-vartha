@@ -572,15 +572,12 @@ function AddMagazinePage() {
             </Form.Item>
 
             <Form.Item
-              name="editionNumber"
-              label="Edition Number"
-              rules={[
-                { required: true, message: "Please input the edition number!" },
-                { pattern: /^[0-9]+$/, message: "Please input numbers only!" },
-              ]}
-            >
-              <Input placeholder="Edition number" type="number" min={1} />
-            </Form.Item>
+                         label="Edition Number"
+                         name="editionNumber"
+                         rules={[{ required: true, message: "Edition number is required" }]}
+                       >
+                         <Input placeholder="Enter edition number" />
+                       </Form.Item>
 
             <Form.Item
               name="publishedMonth"

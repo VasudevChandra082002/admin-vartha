@@ -4,6 +4,7 @@ import { Button } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import MagazineTable from "../../components/magazines/MagazineTable";
+import MagazineTable2 from "../../components/magazines/MagazineTable2";
 
 /**
  * Page to list and add Magazines
