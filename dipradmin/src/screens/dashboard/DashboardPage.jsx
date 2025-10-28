@@ -9,8 +9,7 @@ import {
 } from "../../service/Dashboard/Dashboardapi";
 import { Modal, Input, Button, message, Upload, Form } from "antd";
 import { EditOutlined, UploadOutlined } from "@ant-design/icons";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { storage } from "../../service/firebaseConfig";
+import { uploadFileToAzureStorage } from "../../config/azurestorageservice"; // ✅ use your Azure upload helper
 
 function DashboardPage() {
   const [user, setUser] = useState(null);
@@ -23,7 +22,7 @@ function DashboardPage() {
   const [uploading, setUploading] = useState(false);
   const [updating, setUpdating] = useState(false);
 
-  // Fetch user on load
+  // ✅ Fetch user profile on load
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -38,7 +37,7 @@ function DashboardPage() {
     fetchUser();
   }, []);
 
-  // Open modal
+  // ✅ Open edit modal
   const handleEdit = () => {
     setFormData({
       displayName: user.displayName || "",
@@ -48,44 +47,40 @@ function DashboardPage() {
     setEditVisible(true);
   };
 
-  // Firebase Image Upload
+  // ✅ Upload image to Azure Storage
   const handleImageUpload = async ({ file }) => {
-    setUploading(true);
-    const fileRef = ref(storage, `profileImages/${Date.now()}_${file.name}`);
-    const uploadTask = uploadBytesResumable(fileRef, file);
-
-    uploadTask.on(
-      "state_changed",
-      null,
-      (error) => {
-        message.error("Image upload failed");
-        console.error(error);
-        setUploading(false);
-      },
-      async () => {
-        const url = await getDownloadURL(uploadTask.snapshot.ref);
-        setFormData((prev) => ({ ...prev, profileImage: url }));
-        message.success("Image uploaded");
-        setUploading(false);
+    try {
+      setUploading(true);
+      const res = await uploadFileToAzureStorage(file, "profileImages"); // 👈 use Azure container name
+      if (res?.blobUrl) {
+        setFormData((prev) => ({ ...prev, profileImage: res.blobUrl }));
+        message.success("Profile image uploaded successfully!");
+      } else {
+        message.error("Failed to upload to Azure Storage.");
       }
-    );
+    } catch (error) {
+      console.error("Azure upload error:", error);
+      message.error("Error uploading image to Azure.");
+    } finally {
+      setUploading(false);
+    }
   };
 
-  // Submit Profile Update
+  // ✅ Submit Profile Update
   const handleSubmit = async () => {
     try {
       setUpdating(true);
       const res = await updateUserProfileById(user._id, formData);
       if (res.success) {
-        message.success("Profile updated!");
+        message.success("Profile updated successfully!");
         setUser((prev) => ({ ...prev, ...formData }));
         setEditVisible(false);
       } else {
-        message.error(res.message || "Update failed");
+        message.error(res.message || "Failed to update profile.");
       }
-    } catch (err) {
-      console.error("Error updating profile", err);
-      message.error("Something went wrong");
+    } catch (error) {
+      console.error("Profile update error:", error);
+      message.error("Something went wrong while updating profile.");
     } finally {
       setUpdating(false);
     }
@@ -151,19 +146,22 @@ function DashboardPage() {
               </p>
             </div>
           </div>
-
-          <Button icon={<EditOutlined />} onClick={handleEdit} />
+          <Button icon={<EditOutlined />} onClick={handleEdit}>
+            Edit
+          </Button>
         </div>
       )}
 
-      {/* 🛠 Modal for Edit */}
+      {/* ✅ Edit Modal */}
       <Modal
-        // title="Edit Profile"
         open={editVisible}
         onCancel={() => setEditVisible(false)}
-        footer={null} // Using buttons inside the form
-        //i wnat to increate the font sioz enad i want to center title
-        // style={{ textAlign: "center",fontSize:"24px" }}
+        footer={null}
+        title={
+          <div style={{ textAlign: "center", fontSize: "20px", fontWeight: 600 }}>
+            Edit Profile
+          </div>
+        }
       >
         <Form
           layout="horizontal"
@@ -198,7 +196,7 @@ function DashboardPage() {
               accept="image/*"
             >
               <Button icon={<UploadOutlined />} loading={uploading}>
-                Upload
+                {uploading ? "Uploading..." : "Upload Image"}
               </Button>
             </Upload>
           </Form.Item>
@@ -236,12 +234,12 @@ function DashboardPage() {
         </Form>
       </Modal>
 
-      {/* 📊 Dashboard Widgets */}
+      {/* Dashboard Widgets */}
       <div className="stats-card">
         <StatsCard />
       </div>
       <div className="key-stats">
-        {/* <KeyStats /> */}
+        <KeyStats />
       </div>
       <div className="daily-user">
         <DailyUserCard />
