@@ -166,7 +166,7 @@ function LatestNotificationTable() {
         dataSource={notifications.map((n) => ({ ...n, key: n._id }))}
         loading={loading}
         pagination={{
-          pageSize: 6,
+          pageSize: 10,
           showTotal: (total, range) =>
             `${range[0]}-${range[1]} of ${total} items`,
         }}

@@ -33,6 +33,7 @@ function StatsCard() {
           getTotalMagazine(),
           getTotalVideos(),
         ]);
+console.log("Total Users:", users, "Total Articles:", articles, "Total Magazines:", magazines, "Total Videos:", videos); 
 
         setStats({
           totalUsers: users.totalUsers || 0,
