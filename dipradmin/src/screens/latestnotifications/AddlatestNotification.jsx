@@ -9,10 +9,10 @@ import {
   Typography,
 } from "antd";
 import { LinkOutlined } from "@ant-design/icons";
-import { createLatestNotification } from "../../service/LatestNotification/LatestNotificationService"; // ✅ adjust import path as per your structure
+import { createLatestNotification } from "../../service/LatestNotification/LatestNotificationService";
 
 const { TextArea } = Input;
-const { Text } = Typography;
+const { Title, Text } = Typography;
 
 function AddLatestNotification() {
   const [form] = Form.useForm();
@@ -40,7 +40,7 @@ function AddLatestNotification() {
       if (response && (response._id || response.success)) {
         message.success("Notification added successfully!");
         form.resetFields();
-        navigate("/latestnotification"); // ✅ redirect to your listing page
+        navigate("/latestnotification");
       } else {
         message.error(response?.message || "Failed to add notification.");
       }
@@ -61,93 +61,157 @@ function AddLatestNotification() {
       style={{
         minHeight: "100vh",
         display: "flex",
-        justifyContent: "center",
         alignItems: "center",
-        padding: 20,
-        backgroundColor: "#f5f5f5",
+        justifyContent: "center",
+        background: "#f6f7f9",
+        padding: 24,
       }}
     >
       <Card
-        title="Add Latest Notification"
-        style={{
-          width: 600,
-          borderRadius: 8,
-          boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
+        style={{ 
+          width: 520, 
+          boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
+          borderRadius: 12 
         }}
+        bodyStyle={{ padding: 24 }}
       >
+        <Title level={4} style={{ marginBottom: 4 }}>
+          Add New Notification
+        </Title>
+        <Text type="secondary">
+          Create a new notification with title and link.
+        </Text>
+
         <Form
           form={form}
           layout="vertical"
           onFinish={handleFormSubmit}
           autoComplete="off"
+          style={{ marginTop: 20 }}
         >
           {/* Title */}
           <Form.Item
             label="Title"
             name="title"
             rules={[
-              { required: true, message: "Please enter the notification title!" },
-              { min: 3, message: "Title must be at least 3 characters long." },
+              { 
+                required: true, 
+                message: "Please enter the notification title!" 
+              },
+              { 
+                min: 3, 
+                message: "Title must be at least 3 characters long." 
+              },
+              {
+                max: 120,
+                message: "Title must be 120 characters or less"
+              }
             ]}
           >
-            <Input placeholder="Enter notification title" size="large" />
-          </Form.Item>
-
-          {/* Hindi Field */}
-          {/* <Form.Item label="Hindi Content" name="hindi">
-            <TextArea
-              placeholder="Enter Hindi text (optional)"
-              rows={3}
-              allowClear
-            />
-          </Form.Item> */}
-
-          {/* Kannada Field */}
-          {/* <Form.Item label="Kannada Content" name="kannada">
-            <TextArea
-              placeholder="Enter Kannada text (optional)"
-              rows={3}
-              allowClear
-            />
-          </Form.Item>
-
-          {/* English Field */}
-          {/* <Form.Item label="English Content" name="English">
-            <TextArea
-              placeholder="Enter English text (optional)"
-              rows={3}
-              allowClear
-            />
-          </Form.Item> */}
-           
-          {/* Link */}
-          <Form.Item
-            label="Notification Link"
-            name="link"
-            rules={[
-              { required: true, message: "Please enter the link!" },
-              { type: "url", message: "Please enter a valid URL!" },
-            ]}
-          >
-            <Input
-              placeholder="https://example.com"
-              prefix={<LinkOutlined />}
+            <Input 
+              placeholder="Enter notification title" 
               size="large"
             />
           </Form.Item>
 
-          {/* Actions */}
+          {/* Link Preview Box */}
           <div
             style={{
+              width: "100%",
+              minHeight: 80,
+              border: "1px dashed #d9d9d9",
+              borderRadius: 10,
               display: "flex",
-              gap: 8,
-              marginTop: 16,
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+              padding: 16,
+              marginBottom: 16,
+              background: "#fafafa",
             }}
           >
+            <Form.Item
+              name="link"
+              style={{ width: "100%", margin: 0 }}
+              rules={[
+                { 
+                  required: true, 
+                  message: "Please enter the link!" 
+                },
+                { 
+                  type: "url", 
+                  message: "Please enter a valid URL!" 
+                },
+              ]}
+            >
+              <Input
+                placeholder="https://example.com"
+                prefix={<LinkOutlined />}
+                size="large"
+                style={{ width: "100%" }}
+              />
+            </Form.Item>
+            <Text type="secondary" style={{ fontSize: 12, marginTop: 8 }}>
+              Enter a valid URL for the notification
+            </Text>
+          </div>
+
+          {/* Optional Language Fields */}
+          {/* <div style={{ marginBottom: 16 }}>
+            <Text strong style={{ display: "block", marginBottom: 8 }}>
+              Optional Language Content
+            </Text>
+            
+            <Form.Item 
+              label="Hindi Content" 
+              name="hindi"
+              style={{ marginBottom: 12 }}
+            >
+              <TextArea
+                placeholder="Enter Hindi text (optional)"
+                rows={2}
+                allowClear
+                showCount
+                maxLength={500}
+              />
+            </Form.Item>
+
+            <Form.Item 
+              label="Kannada Content" 
+              name="kannada"
+              style={{ marginBottom: 12 }}
+            >
+              <TextArea
+                placeholder="Enter Kannada text (optional)"
+                rows={2}
+                allowClear
+                showCount
+                maxLength={500}
+              />
+            </Form.Item>
+
+            <Form.Item 
+              label="English Content" 
+              name="English"
+              style={{ marginBottom: 12 }}
+            >
+              <TextArea
+                placeholder="Enter English text (optional)"
+                rows={2}
+                allowClear
+                showCount
+                maxLength={500}
+              />
+            </Form.Item>
+          </div> */}
+
+          {/* Actions */}
+          <div style={{ display: "flex", gap: 8 }}>
             <Button
               type="primary"
               htmlType="submit"
               loading={submitting}
+              disabled={submitting}
               block
               size="large"
               style={{ flex: 1 }}
