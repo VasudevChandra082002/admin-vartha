@@ -260,11 +260,11 @@ const Sidebar = () => {
           </>
         )}
 
-        {/* {isAdminOrModerator && (
+        {isAdminOrModerator && (
           <Menu.Item key="/manage-moderation" icon={<FaRegComments  />}>
             Comments
           </Menu.Item>
-        )} */}
+        )}
 
         <Menu.Item key="login">
           <Button
