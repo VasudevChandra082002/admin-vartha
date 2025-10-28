@@ -74,7 +74,7 @@ function UsersTable() {
     let filtered = [];
     switch (activeTab) {
       case "users":
-        filtered = users.filter((user) => user.role === "content");
+        filtered = users.filter((user) => user.role === "user");
         break;
       case "moderators":
         // If current user is moderator, don't show moderators tab
