@@ -106,7 +106,7 @@ export const getUserProfile = async () => {
 
 export const updateUserProfileById = async (userId, userData) => {
   try {
-    const response = await fetch(`${BASE_URL}/api/users/update-profile/${userId}`, {
+    const response = await fetch(`${BASE_URL}/api/users/update-admin-profile/${userId}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",

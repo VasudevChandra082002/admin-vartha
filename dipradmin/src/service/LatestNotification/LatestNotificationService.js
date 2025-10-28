@@ -1,11 +1,12 @@
 import { message } from "antd";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
+const LLM_URL = import.meta.env.VITE_LLM_API_URL;
 
 export const createLatestNotification = async (notificationData) => {
   try {
     const token = localStorage.getItem("token");
-    const response = await fetch(`${BASE_URL}/api/latestnotifications/createlatestNotification`, {
+    const response = await fetch(`${LLM_URL}/api/latestnotifications/create`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
