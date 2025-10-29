@@ -11,14 +11,13 @@ import {
   Space,
   Tag,
   Descriptions,
+  Select,
 } from "antd";
 import {
   getMagazines,
   deleteMagazine2,
   approveMagazine2,
   getMagazineHistoryById,
-  // getMagazineBydid,
-  // updateMagazine
 } from "../../service/Magazine/MagazineService2";
 import {
   EyeOutlined,
@@ -28,8 +27,9 @@ import {
   CheckOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+import { getMagazineByYearMarchofKarnataka } from "../../service/Magazine/MagazineService2";
 
-const { Title, Text } = Typography;
+const { Option } = Select;
 
 function MagazineTable() {
   const [magazines, setMagazines] = useState([]);
@@ -39,6 +39,7 @@ function MagazineTable() {
   const [isApprovalModalVisible, setIsApprovalModalVisible] = useState(false);
   const [selectedMagazine, setSelectedMagazine] = useState(null);
   const [searchText, setSearchText] = useState("");
+  const [selectedYear, setSelectedYear] = useState(null);
   const [approving, setApproving] = useState(false);
   const navigate = useNavigate();
   const userRole = localStorage.getItem("role");
@@ -59,6 +60,23 @@ function MagazineTable() {
       }
     } catch (error) {
       message.error("Error fetching magazines");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ Fetch magazines by year (new)
+  const fetchMagazinesByYear = async (year) => {
+    try {
+      setLoading(true);
+      const response = await getMagazineByYearMarchofKarnataka(year);
+      if (response.success) {
+        setFilteredMagazines(response.data);
+      } else {
+        message.error("No magazines found for the selected year");
+      }
+    } catch (error) {
+      message.error("Error fetching magazines by year");
     } finally {
       setLoading(false);
     }
@@ -129,9 +147,20 @@ function MagazineTable() {
     setFilteredMagazines(filtered);
   };
 
-  // const handleEdit = (id) => {
-  //   navigate(`/magazine1-history/${id}`);
-  // };
+  // ✅ Handle Year Change (new)
+  const handleYearChange = (value) => {
+    setSelectedYear(value);
+    if (value) {
+      fetchMagazinesByYear(value);
+    } else {
+      setFilteredMagazines(magazines);
+    }
+  };
+
+  // ✅ Extract unique years from magazine data
+  const uniqueYears = [
+    ...new Set(magazines.map((mag) => mag.publishedYear).filter(Boolean)),
+  ].sort((a, b) => b - a);
 
   const handleEdit = async (id) => {
     try {
@@ -155,7 +184,7 @@ function MagazineTable() {
 
   const columns = [
     {
-      title: "Thumbnail march",
+      title: "Thumbnail",
       dataIndex: "magazineThumbnail",
       key: "magazineThumbnail",
       render: (text) => (
@@ -173,7 +202,6 @@ function MagazineTable() {
       dataIndex: "editionNumber",
       key: "editionNumber",
     },
-
     {
       title: "Published Date",
       dataIndex: "createdTime",
@@ -241,20 +269,11 @@ function MagazineTable() {
             icon={<EditOutlined />}
             onClick={() => handleEdit(record._id)}
           />
-          {/* <Popconfirm
-            title="Are you sure to delete this magazine?"
-            onConfirm={() => handleDelete(record._id)}
-            okText="Yes"
-            cancelText="No"
-          >
-            <Button danger icon={<DeleteOutlined />} />
-          </Popconfirm> */}
-
           {(userRole === "admin" ||
             (userRole === "moderator" &&
               record.createdBy?._id === localStorage.getItem("userId"))) && (
             <Popconfirm
-              title="Are you sure to delete this banner?"
+              title="Are you sure to delete this magazine?"
               onConfirm={() => handleDelete(record._id)}
               okText="Yes"
               cancelText="No"
@@ -269,9 +288,25 @@ function MagazineTable() {
 
   return (
     <>
+      {/* ✅ Search + Year Dropdown */}
       <Space
         style={{ display: "flex", justifyContent: "right", marginBottom: 16 }}
       >
+        <Select
+          placeholder="Select Year"
+          style={{ width: 150 }}
+          value={selectedYear}
+          onChange={handleYearChange}
+          allowClear
+        >
+          <Option value={null}>All Years</Option>
+          {uniqueYears.map((year) => (
+            <Option key={year} value={year}>
+              {year}
+            </Option>
+          ))}
+        </Select>
+
         <Input
           placeholder="Search by Title"
           value={searchText}
@@ -290,7 +325,7 @@ function MagazineTable() {
         pagination={{ pageSize: 10 }}
       />
 
-      {/* Magazine Details Modal */}
+      {/* View Modal */}
       <Modal
         title="Magazine Details"
         visible={isModalVisible}
@@ -326,7 +361,6 @@ function MagazineTable() {
                   {selectedMagazine.status.toUpperCase()}
                 </Tag>
               </Descriptions.Item>
-
               <Descriptions.Item label="Published month">
                 {selectedMagazine.publishedMonth || "N/A"}
               </Descriptions.Item>
@@ -347,15 +381,6 @@ function MagazineTable() {
               </Descriptions.Item>
               <Descriptions.Item label="Description">
                 {selectedMagazine.description}
-              </Descriptions.Item>
-              <Descriptions.Item label="Kannada Description">
-                {selectedMagazine.kannada?.description || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Hindi Description">
-                {selectedMagazine.hindi?.description || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="English Description">
-                {selectedMagazine.english?.description || "N/A"}
               </Descriptions.Item>
             </Descriptions>
           </>
@@ -392,13 +417,6 @@ function MagazineTable() {
               <Descriptions.Item label="Published Date">
                 {new Date(selectedMagazine.createdTime).toLocaleDateString()}
               </Descriptions.Item>
-              <Descriptions.Item label="Magazine Type">
-                {selectedMagazine.magazineType === "magazine"
-                  ? "Vartha janapada"
-                  : selectedMagazine.magazineType === "magazine2"
-                  ? "March of Karnataka"
-                  : selectedMagazine.magazineType || "N/A"}
-              </Descriptions.Item>
               <Descriptions.Item label="Status">
                 <Tag
                   color={
@@ -410,27 +428,6 @@ function MagazineTable() {
               </Descriptions.Item>
               <Descriptions.Item label="Created By">
                 {selectedMagazine.createdBy?.displayName || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="PDF Link">
-                <a
-                  href={selectedMagazine.magazinePdf}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  View PDF
-                </a>
-              </Descriptions.Item>
-              <Descriptions.Item label="Description">
-                {selectedMagazine.description || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Kannada Description">
-                {selectedMagazine.kannada?.description || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Hindi Description">
-                {selectedMagazine.hindi?.description || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="English Description">
-                {selectedMagazine.english?.description || "N/A"}
               </Descriptions.Item>
             </Descriptions>
           </>
