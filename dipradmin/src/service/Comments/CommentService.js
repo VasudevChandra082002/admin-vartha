@@ -17,7 +17,9 @@ export const deleteComment = async (commentId) => {
   try {
     const response = await fetch(`${BASE_URL}/api/comments/${commentId}`, {
       method: "DELETE",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+       },
     });
     const data = await response.json();
     return data;

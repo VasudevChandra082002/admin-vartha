@@ -212,3 +212,20 @@ export const deleteVersion2 = async (magazineId, versionNumber) => {
     throw error;
   }
 };
+
+
+export const getMagazineByYearMarchofKarnataka = async (year) => {
+  try {
+    const response = await fetch(`${BASE_URL}/api/magazine2/by-year/${year}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error loading data:", error);
+    throw error;
+  }
+};
