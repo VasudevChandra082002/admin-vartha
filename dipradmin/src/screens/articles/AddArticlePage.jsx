@@ -227,6 +227,7 @@ function AddArticlePage() {
                   <Radio value="statenews">State News</Radio>
                   <Radio value="districtnews">District News</Radio>
                   <Radio value="specialnews">Special News</Radio>
+                  <Radio value="articles">Articles</Radio>
                 </Space>
               </Radio.Group>
             </Form.Item>
