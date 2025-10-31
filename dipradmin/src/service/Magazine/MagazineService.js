@@ -79,25 +79,6 @@ export const deleteMagazine = async (magazineId) => {
   }
 };
 
-// export const createMagazine = async (magazineData) => {
-//   try {
-//          const token = localStorage.getItem("token");
-//     const response = await fetch(`${LLM_URL}/api/magazines/create`, {
-//       method: "POST",
-//       headers: {
-//         "Content-Type": "application/json",
-//         Authorization: `Bearer ${token}`, 
-//       },
-//       body: JSON.stringify(magazineData),
-//     });
-//     return await response.json();
-//   } catch (error) {
-//     message.error("Error creating article.");
-//     throw error;
-//   }
-// };
-
-// src/service/Magazine/MagazineService.js
 export const createMagazine = async (magazineData) => {
   try {
     const token = localStorage.getItem("token");
@@ -240,3 +221,21 @@ export const deleteVersion1 = async (magazineId, versionNumber) => {
     throw error;
   }
 };
+
+
+
+export const getMagazineByYear = async (year) => {
+  try {
+    const response = await fetch(`${BASE_URL}/api/magazine/by-year/${year}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error loading data:", error);
+    throw error;
+  }
+}

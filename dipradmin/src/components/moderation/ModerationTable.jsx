@@ -11,12 +11,13 @@ function ModerationTable() {
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState([]);
 
-  // Fetch comments from API
+  // 🧭 Fetch comments from API
   useEffect(() => {
     const fetchComments = async () => {
       try {
         const response = await getAllComments();
         console.log("API response:", response);
+
         if (response.success) {
           const transformedData = response.data.map((comment) => ({
             key: comment._id,
@@ -24,6 +25,12 @@ function ModerationTable() {
               comment.user?.displayName ||
               comment.user?.email ||
               "Anonymous",
+            email: comment.user?.email || "N/A",
+            phone:
+              comment.user?.phone_Number ||
+              comment.user?.phoneNumber ||
+
+              "N/A",
             comment: comment.comment,
             createdTime: new Date(comment.createdTime).toLocaleString(),
             videoTitle: comment.video ? comment.video.title : "N/A",
@@ -32,6 +39,8 @@ function ModerationTable() {
 
           setCommentsData(transformedData);
           setFilteredData(transformedData);
+        } else {
+          message.error("Failed to load comments.");
         }
       } catch (error) {
         console.error("Error fetching comments:", error);
@@ -93,23 +102,45 @@ function ModerationTable() {
       render: (text) => <span>{text || "Anonymous"}</span>,
     },
     {
+      title: "Email",
+      dataIndex: "email",
+      key: "email",
+      width: 220,
+      render: (text) =>
+        text !== "N/A" ? (
+          <a href={`mailto:${text}`} style={{ color: "#1677ff" }}>
+            {text}
+          </a>
+        ) : (
+          "N/A"
+        ),
+    },
+    {
+      title: "Phone Number",
+      dataIndex: "phone",
+      key: "phone",
+      width: 180,
+      render: (text) =>
+        text !== "N/A" ? (
+          <a href={`tel:${text}`} style={{ color: "#1677ff" }}>
+            {text}
+          </a>
+        ) : (
+          "N/A"
+        ),
+    },
+    {
       title: "Comment",
       dataIndex: "comment",
       key: "comment",
       render: (text) => <span>{text}</span>,
     },
-   
-    // {
-    //   title: "Video",
-    //   dataIndex: "videoTitle",
-    //   key: "videoTitle",
-    // },
     {
       title: "News",
       dataIndex: "newsTitle",
       key: "newsTitle",
     },
-     {
+    {
       title: "Created Time",
       dataIndex: "createdTime",
       key: "createdTime",
