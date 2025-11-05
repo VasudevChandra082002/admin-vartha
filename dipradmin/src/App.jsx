@@ -49,6 +49,9 @@ import AddStaticPage from "./screens/static/addStatic.jsx";
 import AddCategory from "./screens/category/AddCategory.jsx";
 import LatestNotification from "./screens/latestnotifications/LatestNotification.jsx";
 import AddLatestNotification from "./screens/latestnotifications/AddlatestNotification.jsx";
+import ServiceNotification from "./screens/servicenotification/ServiceNotification.jsx";
+import AddNotication from "./components/services-notification/modules/addnotification/AddNotication.jsx";
+import UpdateNotication from "./components/services-notification/modules/updatenotification/UpdateNotication.jsx";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -392,6 +395,31 @@ function App() {
               }
             />
 
+            <Route
+              path="/ServiceNotification"
+              element={
+                <PrivateRoute>
+                  <ServiceNotification />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/ServiceNotification/add"
+              element={
+                <PrivateRoute>
+                  <AddNotication />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/ServiceNotification/edit/:notificationId"
+              element={
+                <PrivateRoute>
+                  <UpdateNotication />
+                </PrivateRoute>
+              }
+            />
+
              <Route
               path="/latestnotification"
               element={
@@ -408,9 +436,9 @@ function App() {
                 </PrivateRoute>
               }
             />
-
-
           </Route>
+          
+          
 
           
         </Routes>
