@@ -254,6 +254,10 @@ const Sidebar = () => {
               Latest Notification
             </Menu.Item>
 
+            <Menu.Item key="/ServiceNotification" icon={<CommentOutlined />}>
+              ServiceNotification
+            </Menu.Item>
+
             {/* <Menu.Item key="/manage-notifications" icon={<VideoCameraAddOutlined />}>
               Notifications
             </Menu.Item> */}
