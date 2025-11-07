@@ -67,7 +67,7 @@ function AddArticlePage() {
         newsImage: imageUrl,
         category: values.category,      
         magazineType: values.magazineType,  // "magazine" | "magazine2"
-        newsType: values.newsType,          // "statenews" | "districtnews" | "specialnews"
+        newsType: values.newsType,          // "statenews" | "districtnews" | "specialnews" | "articles"
       };
 
       const response = await createArticle(payload);
