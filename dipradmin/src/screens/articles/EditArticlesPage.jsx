@@ -69,7 +69,7 @@ function EditArticlesPage() {
             },
             // 👇 include these so radios are pre-selected
             magazineType: data.magazineType || undefined, // "magazine" | "magazine2"
-            newsType: data.newsType || undefined,         // "statenews" | "districtnews" | "specialnews"
+            newsType: data.newsType || undefined,         // "statenews" | "districtnews" | "specialnews" | "articles"
           };
 
           setInitialValues(formattedValues);
@@ -161,7 +161,7 @@ function EditArticlesPage() {
         },
         // 👇 make sure these are sent to match your schema
         magazineType: values.magazineType, // "magazine" | "magazine2"
-        newsType: values.newsType,         // "statenews" | "districtnews" | "specialnews"
+        newsType: values.newsType,         // "statenews" | "districtnews" | "specialnews" | "articles"
       };
 
       const response = await updateArticle(articleId, payload);
@@ -402,6 +402,7 @@ function EditArticlesPage() {
                 <Radio value="statenews">State News</Radio>
                 <Radio value="districtnews">District News</Radio>
                 <Radio value="specialnews">Special News</Radio>
+                <Radio value="articles">Articles</Radio>
               </Space>
             </Radio.Group>
           </Form.Item>
