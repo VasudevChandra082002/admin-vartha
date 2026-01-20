@@ -76,12 +76,14 @@ function EditArticlesPage() {
               ? (typeof data.district === 'object' && data.district?.$oid 
                   ? data.district.$oid 
                   : data.district)
-              : undefined,         // district ID
+              : undefined,         // district ID (will be set from district_slug if needed)
             source: data.source || undefined,
+            district_slug: data.district_slug || undefined, // Store district_slug for later matching
           };
 
           setInitialValues(formattedValues);
           setImageUrl(data.newsImage || "");
+          // Set form values - district will be set again when districts load
           form.setFieldsValue(formattedValues);
         } else {
           message.error("Failed to fetch article details.");
@@ -158,6 +160,34 @@ function EditArticlesPage() {
 
     fetchDistricts();
   }, []);
+
+  // Re-set district value when districts are loaded (if article data is already loaded)
+  useEffect(() => {
+    if (districts.length > 0 && initialValues) {
+      let districtValue = initialValues.district;
+      
+      // If district ID is not set but district_slug exists, find district by slug
+      if (!districtValue && initialValues.district_slug) {
+        const districtBySlug = districts.find((d) => d.district_slug === initialValues.district_slug);
+        if (districtBySlug) {
+          districtValue = typeof districtBySlug._id === 'object' && districtBySlug._id?.$oid 
+            ? districtBySlug._id.$oid 
+            : districtBySlug._id;
+        }
+      }
+      
+      // Verify the district exists in the districts list and set it
+      if (districtValue) {
+        const districtExists = districts.some((d) => {
+          const dId = typeof d._id === 'object' && d._id?.$oid ? d._id.$oid : d._id;
+          return dId === districtValue;
+        });
+        if (districtExists) {
+          form.setFieldsValue({ district: districtValue });
+        }
+      }
+    }
+  }, [districts, initialValues, form]);
 
   // Submit form
   const handleFormSubmit = async (values) => {
