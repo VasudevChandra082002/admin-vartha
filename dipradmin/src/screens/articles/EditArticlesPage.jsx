@@ -77,6 +77,7 @@ function EditArticlesPage() {
                   ? data.district.$oid 
                   : data.district)
               : undefined,         // district ID
+            source: data.source || undefined,
           };
 
           setInitialValues(formattedValues);
@@ -188,6 +189,18 @@ function EditArticlesPage() {
         magazineType: values.magazineType, // "magazine" | "magazine2"
         newsType: values.newsType,         // "statenews" | "districtnews" | "specialnews" | "articles"
         district: values.district,         // district ID
+        district_slug: (() => {
+          // Get district_slug from selected district
+          if (values.district) {
+            const selectedDistrict = districts.find((d) => {
+              const districtId = typeof d._id === 'object' && d._id?.$oid ? d._id.$oid : d._id;
+              return districtId === values.district;
+            });
+            return selectedDistrict?.district_slug || "";
+          }
+          return "";
+        })(),
+        source: values.source || "",        // source
       };
 
       const response = await updateArticle(articleId, payload);
@@ -419,6 +432,13 @@ function EditArticlesPage() {
                 );
               })}
             </Select>
+          </Form.Item>
+
+          <Form.Item
+            label="Source"
+            name="source"
+          >
+            <Input placeholder="Enter article source" />
           </Form.Item>
 
           {/* 👇 NEW: Magazine Type (radio) */}
