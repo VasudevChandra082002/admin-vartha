@@ -150,8 +150,9 @@ import { MdPages } from "react-icons/md";
 import { FaRegNewspaper } from "react-icons/fa";
 import { MdOutlineWebStories } from "react-icons/md";
 import { TbCategoryFilled } from "react-icons/tb";
-import { FaRegComments  } from "react-icons/fa";
+import { FaRegComments, FaFolderPlus } from "react-icons/fa";
 import { MdOutlineEditNotifications } from "react-icons/md";
+import { HiOutlineLocationMarker } from "react-icons/hi";
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -261,6 +262,20 @@ const Sidebar = () => {
             {/* <Menu.Item key="/manage-notifications" icon={<VideoCameraAddOutlined />}>
               Notifications
             </Menu.Item> */}
+          </>
+        )}
+
+        {isAdminOrModerator && (
+          <>
+            <Menu.Item key="/video-categories" icon={<TbCategoryFilled />}>
+              Video Categories
+            </Menu.Item>
+            <Menu.Item key="/photo-categories" icon={<TbCategoryFilled />}>
+              Photo Categories
+            </Menu.Item>
+            <Menu.Item key="/districts" icon={<HiOutlineLocationMarker />}>
+              Districts
+            </Menu.Item>
           </>
         )}
 
