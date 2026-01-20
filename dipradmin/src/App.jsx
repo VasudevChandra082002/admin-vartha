@@ -53,6 +53,15 @@ import AddLatestNotification from "./screens/latestnotifications/AddlatestNotifi
 import ServiceNotification from "./screens/servicenotification/ServiceNotification.jsx";
 import AddNotication from "./components/services-notification/modules/addnotification/AddNotication.jsx";
 import UpdateNotication from "./components/services-notification/modules/updatenotification/UpdateNotication.jsx";
+import AddVideoCategory from "./screens/videoCategory/AddVideoCategory.jsx";
+import EditVideoCategory from "./screens/videoCategory/EditVideoCategory.jsx";
+import VideoCategoryPage from "./screens/videoCategory/VideoCategoryPage.jsx";
+import AddPhotoCategory from "./screens/photoCategory/AddPhotoCategory.jsx";
+import EditPhotoCategory from "./screens/photoCategory/EditPhotoCategory.jsx";
+import PhotoCategoryPage from "./screens/photoCategory/PhotoCategoryPage.jsx";
+import AddDistrict from "./screens/districts/AddDistrict.jsx";
+import EditDistrict from "./screens/districts/EditDistrict.jsx";
+import DistrictsPage from "./screens/districts/DistrictsPage.jsx";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -442,6 +451,81 @@ function App() {
               element={
                 <PrivateRoute>
                   <AddLatestNotification />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/video-categories"
+              element={
+                <PrivateRoute>
+                  <VideoCategoryPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/video-category/add"
+              element={
+                <PrivateRoute>
+                  <AddVideoCategory />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/video-category/edit/:categoryId"
+              element={
+                <PrivateRoute>
+                  <EditVideoCategory />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/photo-categories"
+              element={
+                <PrivateRoute>
+                  <PhotoCategoryPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/photo-category/add"
+              element={
+                <PrivateRoute>
+                  <AddPhotoCategory />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/photo-category/edit/:categoryId"
+              element={
+                <PrivateRoute>
+                  <EditPhotoCategory />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/districts"
+              element={
+                <PrivateRoute>
+                  <DistrictsPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/districts/add"
+              element={
+                <PrivateRoute>
+                  <AddDistrict />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/districts/edit/:districtId"
+              element={
+                <PrivateRoute>
+                  <EditDistrict />
                 </PrivateRoute>
               }
             />
