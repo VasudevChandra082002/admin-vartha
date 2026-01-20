@@ -219,22 +219,18 @@ function EditLongVideos() {
 
     setLoading(true);
     try {
-      // Use category from form values or fallback to fetched data category
-      // Ensure category is a string value, not undefined or "string"
-      const categoryValue = values.category || fetchedVideoData?.category || selectedCategory;
-      // If category is still undefined or invalid, use empty string or keep original
-      const finalCategory = categoryValue && categoryValue !== "string" ? categoryValue : (fetchedVideoData?.category || "");
+      // Use video category ID as the category field
+      const categoryValue = values.videoCategory || "";
       
       const payload = {
         title: values.title,
         description: values.description,
         video_url: videoUrl,
         thumbnail: imageUrl,
-        category: finalCategory, // Use actual category value
+        category: categoryValue, // Use video category ID
         Topics: selectedTopic || values.topics || fetchedVideoData?.Topics || "",
         magazineType: magazineType || values.magazineType,
         newsType: newsType || values.newsType,
-        videoCategory: values.videoCategory, // video category ID
       };
 
       const res = await updateLongVideoById(videoId, payload);
