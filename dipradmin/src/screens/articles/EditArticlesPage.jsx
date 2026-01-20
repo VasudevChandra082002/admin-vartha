@@ -21,6 +21,7 @@ import {
   revertNewsByVersionNumber,
 } from "../../service/Article/ArticleService";
 import { getCategories } from "../../service/categories/CategoriesApi";
+import { getDistricts } from "../../service/districts/DistrictsApi";
 import moment from "moment/moment";
 import { uploadFileToAzureStorage } from "../../config/azurestorageservice";
 
@@ -39,6 +40,7 @@ function EditArticlesPage() {
   const [imageUrl, setImageUrl] = useState("");
   const [initialValues, setInitialValues] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [districts, setDistricts] = useState([]);
   const [fetching, setFetching] = useState(true);
   const [versionHistory, setVersionHistory] = useState([]);
   const [previousVersion, setPreviousVersion] = useState(null);
@@ -70,6 +72,11 @@ function EditArticlesPage() {
             // 👇 include these so radios are pre-selected
             magazineType: data.magazineType || undefined, // "magazine" | "magazine2"
             newsType: data.newsType || undefined,         // "statenews" | "districtnews" | "specialnews" | "articles"
+            district: data.district 
+              ? (typeof data.district === 'object' && data.district?.$oid 
+                  ? data.district.$oid 
+                  : data.district)
+              : undefined,         // district ID
           };
 
           setInitialValues(formattedValues);
@@ -133,6 +140,24 @@ function EditArticlesPage() {
   //   fetchCategories();
   // }, []);
 
+  // Fetch districts
+  useEffect(() => {
+    const fetchDistricts = async () => {
+      try {
+        const response = await getDistricts();
+        if (response?.success && response?.data?.districts && Array.isArray(response.data.districts)) {
+          setDistricts(response.data.districts);
+        } else {
+          message.error("Failed to load districts.");
+        }
+      } catch (error) {
+        message.error("Error fetching districts.");
+      }
+    };
+
+    fetchDistricts();
+  }, []);
+
   // Submit form
   const handleFormSubmit = async (values) => {
     setLoading(true);
@@ -162,6 +187,7 @@ function EditArticlesPage() {
         // 👇 make sure these are sent to match your schema
         magazineType: values.magazineType, // "magazine" | "magazine2"
         newsType: values.newsType,         // "statenews" | "districtnews" | "specialnews" | "articles"
+        district: values.district,         // district ID
       };
 
       const response = await updateArticle(articleId, payload);
@@ -375,6 +401,24 @@ function EditArticlesPage() {
             rules={[{ required: true, message: "Published date is required" }]}
           >
             <DatePicker style={{ width: "100%" }} />
+          </Form.Item>
+
+          <Form.Item
+            label="District"
+            name="district"
+          >
+            <Select placeholder="Select district">
+              {districts.map((district) => {
+                const districtId = typeof district._id === 'object' && district._id?.$oid 
+                  ? district._id.$oid 
+                  : district._id;
+                return (
+                  <Option key={districtId} value={districtId}>
+                    {district.district_name}
+                  </Option>
+                );
+              })}
+            </Select>
           </Form.Item>
 
           {/* 👇 NEW: Magazine Type (radio) */}

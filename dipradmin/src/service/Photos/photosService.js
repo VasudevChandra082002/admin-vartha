@@ -93,3 +93,22 @@ export const approvePhotosById = async (data) => {
     throw error;
   }
 };
+
+export const updatePhotos = async (id, data) => {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${LLM_URL}/api/photos/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify(data), // { title: "...", photoImage: "..." }
+    });
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error("Error updating photo:", error);
+    throw error;
+  }
+};

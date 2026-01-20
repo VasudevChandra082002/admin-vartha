@@ -16,6 +16,7 @@ import { createArticle } from "../../service/Article/ArticleService";
 import { useNavigate } from "react-router-dom";
 import { uploadFileToAzureStorage } from "../../config/azurestorageservice";
 import { getCategories } from "../../service/categories/CategoriesApi";
+import { getDistricts } from "../../service/districts/DistrictsApi";
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -27,6 +28,7 @@ function AddArticlePage() {
   const [imageUploading, setImageUploading] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const [categories, setCategories] = useState([]);
+  const [districts, setDistricts] = useState([]);
 
   useEffect(() => {
     (async () => {
@@ -41,6 +43,21 @@ function AddArticlePage() {
         }
       } catch {
         message.error("Error fetching categories.");
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const response = await getDistricts();
+        if (response?.success && response?.data?.districts && Array.isArray(response.data.districts)) {
+          setDistricts(response.data.districts);
+        } else {
+          message.error("Failed to load districts.");
+        }
+      } catch {
+        message.error("Error fetching districts.");
       }
     })();
   }, []);
@@ -68,6 +85,7 @@ function AddArticlePage() {
         category: values.category,      
         magazineType: values.magazineType,  // "magazine" | "magazine2"
         newsType: values.newsType,          // "statenews" | "districtnews" | "specialnews" | "articles"
+        district: values.district,          // district ID
       };
 
       const response = await createArticle(payload);
@@ -200,6 +218,24 @@ function AddArticlePage() {
               rules={[{ required: true, message: "Published date is required" }]}
             >
               <DatePicker style={{ width: "100%" }} />
+            </Form.Item>
+
+            <Form.Item
+              label="District"
+              name="district"
+            >
+              <Select placeholder="Select district">
+                {districts.map((district) => {
+                  const districtId = typeof district._id === 'object' && district._id?.$oid 
+                    ? district._id.$oid 
+                    : district._id;
+                  return (
+                    <Option key={districtId} value={districtId}>
+                      {district.district_name}
+                    </Option>
+                  );
+                })}
+              </Select>
             </Form.Item>
 
             <Form.Item

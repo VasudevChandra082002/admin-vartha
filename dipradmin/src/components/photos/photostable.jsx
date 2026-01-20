@@ -16,6 +16,7 @@ import {
   EyeOutlined,
   DeleteOutlined,
   CheckOutlined,
+  EditOutlined,
 } from "@ant-design/icons";
 import {
   getAllPhotos,
@@ -204,7 +205,7 @@ const fetchPhotos = async () => {
             />
           </Tooltip>
 
-          {/* {(role === "admin" || role === "moderator") && (
+          {(role === "admin" || role === "moderator") && (
             <Tooltip title="Edit">
               <Button
                 type="primary"
@@ -212,7 +213,7 @@ const fetchPhotos = async () => {
                 onClick={() => handleEdit(record)}
               />
             </Tooltip>
-          )} */}
+          )}
 
           {(role === "admin" ||
             (role === "moderator" && record.createdBy?._id === userId)) && (
