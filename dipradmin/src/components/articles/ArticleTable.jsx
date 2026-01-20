@@ -18,6 +18,7 @@ import {
   approveNews,
   getHistoryById, // ✅ Import history API
 } from "../../service/Article/ArticleService";
+import { getDistricts } from "../../service/districts/DistrictsApi";
 import {
   EyeOutlined,
   EditOutlined,
@@ -38,12 +39,25 @@ function ArticleTable() {
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [searchText, setSearchText] = useState("");
   const [approving, setApproving] = useState(false);
+  const [districts, setDistricts] = useState([]);
   const navigate = useNavigate();
   const userRole = localStorage.getItem("role");
 
   useEffect(() => {
     fetchArticles();
+    fetchDistricts();
   }, []);
+
+  const fetchDistricts = async () => {
+    try {
+      const response = await getDistricts();
+      if (response?.success && response?.data?.districts && Array.isArray(response.data.districts)) {
+        setDistricts(response.data.districts);
+      }
+    } catch (error) {
+      console.error("Error fetching districts:", error);
+    }
+  };
 
   const fetchArticles = async () => {
     try {
@@ -205,6 +219,36 @@ function ArticleTable() {
       title: "Author",
       dataIndex: "author",
       key: "author",
+    },
+    {
+      title: "District",
+      dataIndex: "district",
+      key: "district",
+      render: (district, record) => {
+        // Try to find district by ID first
+        if (district) {
+          const districtId = typeof district === 'object' && district?.$oid 
+            ? district.$oid 
+            : district;
+          const districtObj = districts.find((d) => {
+            const dId = typeof d._id === 'object' && d._id?.$oid ? d._id.$oid : d._id;
+            return dId === districtId;
+          });
+          if (districtObj) {
+            return districtObj.district_name || "N/A";
+          }
+        }
+        
+        // If district ID not found, try to find by district_slug
+        if (record.district_slug) {
+          const districtBySlug = districts.find((d) => d.district_slug === record.district_slug);
+          if (districtBySlug) {
+            return districtBySlug.district_name || "N/A";
+          }
+        }
+        
+        return "N/A";
+      },
     },
     {
       title: "Published Date",
