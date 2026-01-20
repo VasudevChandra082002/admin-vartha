@@ -17,6 +17,7 @@ import { useNavigate } from "react-router-dom";
 import { storage } from "../../service/firebaseConfig";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { getCategories } from "../../service/categories/CategoriesApi";
+import { getVideoCategories } from "../../service/videoCategory/VideoCategoryApi";
 import { uploadFileToAzureStorage } from "../../config/azurestorageservice";
 
 const { TextArea } = Input;
@@ -35,9 +36,11 @@ function AddLongVideos() {
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [magazineType, setMagazineType] = useState(null);
   const [newsType, setNewsType] = useState(null);
+  const [videoCategories, setVideoCategories] = useState([]);
 
   useEffect(() => {
     fetchCategories();
+    fetchVideoCategories();
   }, []);
 
   const fetchCategories = async () => {
@@ -50,6 +53,20 @@ function AddLongVideos() {
       }
     } catch (error) {
       message.error("Error fetching categories.");
+    }
+  };
+
+  const fetchVideoCategories = async () => {
+    try {
+      const response = await getVideoCategories();
+      if (response?.success && response?.data?.video_categories && Array.isArray(response.data.video_categories)) {
+        setVideoCategories(response.data.video_categories);
+      } else {
+        message.error("Failed to load video categories.");
+      }
+    } catch (error) {
+      console.error("Error fetching video categories:", error);
+      message.error("Error fetching video categories.");
     }
   };
 
@@ -72,6 +89,7 @@ function AddLongVideos() {
         topics: selectedTopic,
         magazineType: magazineType, // Add magazineType to payload
         newsType: newsType, // Add newsType to payload
+        videoCategory: values.videoCategory, // video category ID
       };
 
       const response = await createVideo(payload);
@@ -224,6 +242,24 @@ const handleVideoUpload = async ({ file }) => {
               rules={[{ required: true, message: "Description is required" }]}
             >
               <TextArea rows={4} placeholder="Enter video description" />
+            </Form.Item>
+
+            <Form.Item
+              label="Video Category"
+              name="videoCategory"
+            >
+              <Select placeholder="Select video category">
+                {videoCategories.map((category) => {
+                  const categoryId = typeof category._id === 'object' && category._id?.$oid 
+                    ? category._id.$oid 
+                    : category._id;
+                  return (
+                    <Option key={categoryId} value={categoryId}>
+                      {category.category_name}
+                    </Option>
+                  );
+                })}
+              </Select>
             </Form.Item>
 
             {/* <Form.Item

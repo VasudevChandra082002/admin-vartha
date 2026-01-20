@@ -44,6 +44,7 @@ import AddBannerPage from "./screens/banners/AddBanner.jsx";
 import EditBannerPage from "./screens/banners/EditBanner.jsx";
 import PhtotosPage from "./screens/photos/Photos.jsx";
 import AddPhotos from "./screens/photos/Addphotos.jsx";
+import EditPhotos from "./screens/photos/EditPhotos.jsx";
 import StaticPage from "./screens/static/Static.jsx";
 import AddStaticPage from "./screens/static/addStatic.jsx";
 import AddCategory from "./screens/category/AddCategory.jsx";
@@ -348,6 +349,14 @@ function App() {
               element={
                 <PrivateRoute>
                   <AddPhotos />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/photos/edit/:photoId"
+              element={
+                <PrivateRoute>
+                  <EditPhotos />
                 </PrivateRoute>
               }
             />

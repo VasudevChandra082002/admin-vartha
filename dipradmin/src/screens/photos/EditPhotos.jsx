@@ -1,22 +1,76 @@
 import React, { useState, useEffect } from "react";
-import { Button, Card, Upload, message, Input, Form, Typography, Select } from "antd";
+import { Button, Card, Upload, message, Input, Form, Typography, Spin, Select } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { uploadFileToAzureStorage } from "../../config/azurestorageservice";
-import { createPhotos } from "../../service/Photos/photosService";
+import { getPhotosById, updatePhotos } from "../../service/Photos/photosService";
 import { getPhotoCategories } from "../../service/photoCategory/PhotoCategoryApi";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-function AddPhotos() {
+function EditPhotos() {
   const [form] = Form.useForm();
   const navigate = useNavigate();
+  const { photoId } = useParams();
 
   const [imageUrl, setImageUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [photoCategories, setPhotoCategories] = useState([]);
+
+  useEffect(() => {
+    const fetchPhoto = async () => {
+      try {
+        setFetching(true);
+        const response = await getPhotosById(photoId);
+        console.log("Photo response:", response); // Debug log
+        
+        let photo = null;
+        
+        // Handle different response structures
+        if (response?.success && response?.data) {
+          photo = response.data;
+        } else if (response?.data) {
+          photo = response.data;
+        } else if (response && !response.success) {
+          // Response might be the photo object directly
+          photo = response;
+        } else {
+          message.error("Failed to load photo details.");
+          setFetching(false);
+          return;
+        }
+        
+        if (photo) {
+          // Extract category ID if it's an object
+          const categoryId = photo.category 
+            ? (typeof photo.category === 'object' && photo.category?.$oid 
+                ? photo.category.$oid 
+                : photo.category)
+            : undefined;
+          
+          form.setFieldsValue({
+            title: photo.title || "",
+            category: categoryId,
+          });
+          setImageUrl(photo.photoImage || "");
+        } else {
+          message.error("Photo data not found in response.");
+        }
+      } catch (error) {
+        console.error("Error fetching photo:", error);
+        message.error("Error fetching photo details: " + (error.message || "Unknown error"));
+      } finally {
+        setFetching(false);
+      }
+    };
+
+    if (photoId) {
+      fetchPhoto();
+    }
+  }, [photoId, form]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -65,29 +119,29 @@ function AddPhotos() {
   };
 
   const onFinish = async (values) => {
-    if (!imageUrl) {
-      message.error("Please upload an image first.");
-      return;
-    }
     setSaving(true);
     try {
-      const payload = { 
-        photoImage: imageUrl, 
+      const payload = {
         title: values.title,
-        category: values.category // photo category ID
+        category: values.category, // photo category ID
       };
-      const response = await createPhotos(payload);
+
+      // Only include photoImage if a new image was uploaded
+      if (imageUrl) {
+        payload.photoImage = imageUrl;
+      }
+
+      const response = await updatePhotos(photoId, payload);
 
       if (response?.success) {
-        message.success("Photo saved successfully!");
-        form.resetFields();
-        setImageUrl("");
+        message.success("Photo updated successfully!");
         navigate("/manage-photos");
       } else {
-        message.error(response?.message || "Failed to save photo.");
+        message.error(response?.message || "Failed to update photo.");
       }
     } catch (err) {
-      message.error("Error saving photo to database.");
+      console.error("Error updating photo:", err);
+      message.error("Error updating photo.");
     } finally {
       setSaving(false);
     }
@@ -95,8 +149,24 @@ function AddPhotos() {
 
   const onReset = () => {
     form.resetFields();
-    setImageUrl("");
+    // Don't reset imageUrl on reset, keep the current image
   };
+
+  if (fetching) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#f6f7f9",
+        }}
+      >
+        <Spin size="large" />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -114,9 +184,9 @@ function AddPhotos() {
         styles={{ body: { padding: 24 } }}
       >
         <Title level={4} style={{ marginBottom: 4 }}>
-          Add New Photo
+          Edit Photo
         </Title>
-        <Text type="secondary">Upload a photo and give it a title.</Text>
+        <Text type="secondary">Update the photo title and image.</Text>
 
         <Form
           form={form}
@@ -191,7 +261,7 @@ function AddPhotos() {
               loading={uploading}
               style={{ marginBottom: 16 }}
             >
-              {uploading ? "Uploading..." : "Upload Image"}
+              {uploading ? "Uploading..." : imageUrl ? "Change Image" : "Upload Image"}
             </Button>
           </Upload>
 
@@ -200,14 +270,22 @@ function AddPhotos() {
               type="primary"
               htmlType="submit"
               block
-              disabled={!imageUrl || uploading}
+              disabled={uploading}
               loading={saving}
               style={{ flex: 1 }}
             >
-              {saving ? "Saving..." : "Save Photo"}
+              {saving ? "Updating..." : "Update Photo"}
             </Button>
             <Button onClick={onReset} block disabled={uploading || saving} style={{ flex: 1 }}>
               Reset
+            </Button>
+            <Button
+              onClick={() => navigate("/manage-photos")}
+              block
+              disabled={uploading || saving}
+              style={{ flex: 1 }}
+            >
+              Cancel
             </Button>
           </div>
         </Form>
@@ -216,4 +294,4 @@ function AddPhotos() {
   );
 }
 
-export default AddPhotos;
+export default EditPhotos;
