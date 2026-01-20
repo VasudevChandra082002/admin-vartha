@@ -76,6 +76,16 @@ function AddArticlePage() {
         return;
       }
 
+      // Get district_slug from selected district
+      let district_slug = "";
+      if (values.district) {
+        const selectedDistrict = districts.find((d) => {
+          const districtId = typeof d._id === 'object' && d._id?.$oid ? d._id.$oid : d._id;
+          return districtId === values.district;
+        });
+        district_slug = selectedDistrict?.district_slug || "";
+      }
+
       const payload = {
         title: values.title,
         description: values.description,
@@ -86,6 +96,8 @@ function AddArticlePage() {
         magazineType: values.magazineType,  // "magazine" | "magazine2"
         newsType: values.newsType,          // "statenews" | "districtnews" | "specialnews" | "articles"
         district: values.district,          // district ID
+        district_slug: district_slug,      // district slug (from selected district)
+        source: values.source || "",        // source
       };
 
       const response = await createArticle(payload);
@@ -236,6 +248,13 @@ function AddArticlePage() {
                   );
                 })}
               </Select>
+            </Form.Item>
+
+            <Form.Item
+              label="Source"
+              name="source"
+            >
+              <Input placeholder="Enter article source" />
             </Form.Item>
 
             <Form.Item
